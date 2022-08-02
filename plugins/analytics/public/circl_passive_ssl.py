@@ -31,7 +31,7 @@ class CirclPassiveSSLApi(object):
 
         if isinstance(observable, Ip):
             r = requests.get(
-                CirclPassiveSSLApi.API + "query/" + observable.value,
+                f"{CirclPassiveSSLApi.API}query/{observable.value}",
                 auth=auth,
                 headers={
                     "User-Agent": "Yeti Analytics Worker",
@@ -39,6 +39,7 @@ class CirclPassiveSSLApi(object):
                 },
                 proxies=yeti_config.proxy,
             )
+
 
             if r.ok:
                 return r.json()
@@ -48,7 +49,7 @@ class CirclPassiveSSLApi(object):
         auth = (settings["circl_username"], settings["circl_password"])
 
         r = requests.get(
-            CirclPassiveSSLApi.API + "cfetch/" + cert_sha1,
+            f"{CirclPassiveSSLApi.API}cfetch/{cert_sha1}",
             auth=auth,
             headers={
                 "User-Agent": "Yeti Analytics Worker",
@@ -56,6 +57,7 @@ class CirclPassiveSSLApi(object):
             },
             proxies=yeti_config.proxy,
         )
+
 
         if r.ok:
             return r.json()
@@ -76,8 +78,9 @@ class CirclPassiveSSLSearchIP(OneShotAnalytics, CirclPassiveSSLApi):
         links = set()
 
         if isinstance(observable, Ip):
-            ip_search = CirclPassiveSSLApi.search_ip(observable, results.settings)
-            if ip_search:
+            if ip_search := CirclPassiveSSLApi.search_ip(
+                observable, results.settings
+            ):
                 json_string = json.dumps(
                     ip_search, sort_keys=True, indent=4, separators=(",", ": ")
                 )
@@ -87,10 +90,9 @@ class CirclPassiveSSLSearchIP(OneShotAnalytics, CirclPassiveSSLApi):
                 for ip_addr, ip_details in ip_search.items():
                     for cert_sha1 in ip_details.get("certificates", []):
                         try:
-                            cert_result = CirclPassiveSSLApi.fetch_cert(
+                            if cert_result := CirclPassiveSSLApi.fetch_cert(
                                 cert_sha1, results.settings
-                            )
-                            if cert_result:
+                            ):
                                 _info = cert_result.get("info", {})
                                 x509 = load_certificate(
                                     FILETYPE_PEM, cert_result.get("pem")
@@ -129,8 +131,6 @@ class CirclPassiveSSLSearchIP(OneShotAnalytics, CirclPassiveSSLApi):
                                 )
 
                         except Exception as e:
-                            logging.error(
-                                "Error attempting to fetch cert file {}".format(e)
-                            )
+                            logging.error(f"Error attempting to fetch cert file {e}")
 
         return list(links)

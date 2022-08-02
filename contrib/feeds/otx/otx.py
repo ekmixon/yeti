@@ -63,7 +63,7 @@ class OtxFeed(Feed):
             pulse_details = self.otx.get_pulse_details(pulse["pulse_id"])
 
             pulse_context = {
-                "source": "OTX Pulse - {}".format(pulse_details["name"]),
+                "source": f'OTX Pulse - {pulse_details["name"]}',
                 "pulse_id": pulse["pulse_id"],
                 "name": pulse_details["name"],
                 "pulse_description": pulse_details["description"],
@@ -77,6 +77,7 @@ class OtxFeed(Feed):
                 "public": pulse_details["public"],
                 "created": dateutil.parser.parse(pulse_details["created"]),
             }
+
 
             for indicator in pulse_details["indicators"]:
                 self.analyze(

@@ -15,8 +15,7 @@ class FeodoTrackerIPBlockList(Feed):
     }
 
     def update(self):
-        firs_line = 0
-        for index, line in self.update_csv(
+        for firs_line, (index, line) in enumerate(self.update_csv(
             delimiter=",",
             filter_row="first_seen_utc",
             names=[
@@ -27,19 +26,14 @@ class FeodoTrackerIPBlockList(Feed):
                 "last_online",
                 "malware",
             ],
-        ):
+        )):
             if firs_line != 0:
                 self.analyze(line)
-            firs_line += 1
 
     # pylint: disable=arguments-differ
     def analyze(self, line):
 
-        tags = []
-        tags.append(line["malware"].lower())
-        tags.append("c2")
-        tags.append("blocklist")
-
+        tags = [line["malware"].lower(), "c2", "blocklist"]
         context = {
             "first_seen": line["first_seen_utc"],
             "source": self.name,
@@ -54,4 +48,4 @@ class FeodoTrackerIPBlockList(Feed):
             ip_obs.tag(tags)
 
         except ObservableValidationError as e:
-            logging.error("Invalid line: {}\nLine: {}".format(e, line))
+            logging.error(f"Invalid line: {e}\nLine: {line}")

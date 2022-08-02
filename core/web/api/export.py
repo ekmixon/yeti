@@ -37,7 +37,7 @@ class Export(CrudApi):
         try:
             e = self.objectmanager.objects.get(id=id)
         except DoesNotExist:
-            return render({"error": "No Export found for id {}".format(id)}), 404
+            return render({"error": f"No Export found for id {id}"}), 404
         if e.output_dir.startswith("/"):
             d = e.output_dir
         else:

@@ -34,13 +34,13 @@ class Indicator(Node):
     }
 
     @classmethod
-    def get_form(klass):
-        form = model_form(klass, exclude=klass.exclude_fields)
+    def get_form(cls):
+        form = model_form(cls, exclude=cls.exclude_fields)
         form.links = EntityListField("Link with entities")
         return form
 
     def __unicode__(self):
-        return "{} (pattern: '{}')".format(self.name, self.pattern)
+        return f"{self.name} (pattern: '{self.pattern}')"
 
     @classmethod
     def search(cls, observables):

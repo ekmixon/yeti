@@ -16,7 +16,7 @@ from core.web.helpers import requires_permissions
 
 
 def save_file(uploaded_file, filename=None):
-    value = "FILE:{}".format(stream_sha256(uploaded_file))
+    value = f"FILE:{stream_sha256(uploaded_file)}"
     mime_type = magic.from_buffer(uploaded_file.read(100), mime=True)
     uploaded_file.seek(0)
     body = AttachedFile.from_upload(uploaded_file, force_mime=mime_type)
@@ -32,7 +32,7 @@ def save_file(uploaded_file, filename=None):
 
 def save_uploaded_files():
     files = []
-    unzip = bool(request.form.get("unzip") in ["true", "on"])
+    unzip = request.form.get("unzip") in ["true", "on"]
 
     for uploaded_file in request.files.getlist("files"):
         if unzip and zipfile.is_zipfile(uploaded_file):

@@ -43,9 +43,7 @@ class ThreatMinerApi(object):
                 raise GenericYetiError("Status code: ".format(response.status_code))
             return response.json()
         except Exception as e:
-            raise GenericYetiError(
-                "Hit an error checking {},{}".format(observable.value, e)
-            )
+            raise GenericYetiError(f"Hit an error checking {observable.value},{e}")
 
 
 """
@@ -88,7 +86,7 @@ class MetaData(OneShotAnalytics, ThreatMinerApi):
                         new_hash.active_link_to(observable, family, "threatminer_query")
                     )
                 except ObservableValidationError as e:
-                    logging.error("Caught an exception: {}".format(e))
+                    logging.error(f"Caught an exception: {e}")
 
             observable.add_context(result)
         return list(links)
@@ -134,7 +132,7 @@ class HttpTraffic(OneShotAnalytics, ThreatMinerApi):
                             )
                         )
                     except ObservableValidationError as e:
-                        logging.error("Caught an exception: {}".format(e))
+                        logging.error(f"Caught an exception: {e}")
 
                 if http_request.get("ip"):
                     try:
@@ -146,7 +144,7 @@ class HttpTraffic(OneShotAnalytics, ThreatMinerApi):
                             )
                         )
                     except ObservableValidationError as e:
-                        logging.error("Caught an exception: {}".format(e))
+                        logging.error(f"Caught an exception: {e}")
 
         observable.add_context(result)
         return list(links)
@@ -184,7 +182,7 @@ class RelatedHosts(OneShotAnalytics, ThreatMinerApi):
                         )
                     )
                 except ObservableValidationError as e:
-                    logging.error("Caught an exception: {}".format(e))
+                    logging.error(f"Caught an exception: {e}")
 
             for domain in r.get("domains"):
                 try:
@@ -203,7 +201,7 @@ class RelatedHosts(OneShotAnalytics, ThreatMinerApi):
                             o_host.active_link_to(o_ip, "resolved to", "ThreatMiner")
                         )
                 except ObservableValidationError as e:
-                    logging.error("Caught an exception: {}".format(e))
+                    logging.error(f"Caught an exception: {e}")
 
         observable.add_context(result)
         return list(links)
@@ -243,7 +241,7 @@ class LookupSubdomains(OneShotAnalytics, ThreatMinerApi):
                 )
 
             except ObservableValidationError as e:
-                logging.error("Caught an exception: {}".format(e))
+                logging.error(f"Caught an exception: {e}")
 
         observable.add_context(result)
         return list(links)
@@ -285,7 +283,7 @@ class ThreatMinerPDNS(OneShotAnalytics, ThreatMinerApi):
                         )
                     )
                 except ObservableValidationError as e:
-                    logging.error("Caught an exception: {}".format(e))
+                    logging.error(f"Caught an exception: {e}")
 
             observable.add_context(result)
 
@@ -308,7 +306,7 @@ class ThreatMinerPDNS(OneShotAnalytics, ThreatMinerApi):
                         )
                     )
                 except ObservableValidationError as e:
-                    logging.error("Caught an exception: {}".format(e))
+                    logging.error(f"Caught an exception: {e}")
 
             observable.add_context(result)
         return list(links)
@@ -350,7 +348,7 @@ class SearchUri(OneShotAnalytics, ThreatMinerApi):
                         )
                     )
                 except ObservableValidationError as e:
-                    logging.error("Caught an exception: {}".format(e))
+                    logging.error(f"Caught an exception: {e}")
 
             observable.add_context(result)
 
@@ -373,7 +371,7 @@ class SearchUri(OneShotAnalytics, ThreatMinerApi):
                         )
                     )
                 except ObservableValidationError as e:
-                    logging.error("Caught an exception: {}".format(e))
+                    logging.error(f"Caught an exception: {e}")
 
             observable.add_context(result)
         return list(links)
@@ -417,7 +415,7 @@ class RelatedSamples(OneShotAnalytics, ThreatMinerApi):
                             )
                         )
                     except ObservableValidationError as e:
-                        logging.error("Caught an exception: {}".format(e))
+                        logging.error(f"Caught an exception: {e}")
 
             observable.add_context(result)
 
@@ -441,7 +439,7 @@ class RelatedSamples(OneShotAnalytics, ThreatMinerApi):
                             )
                         )
                     except ObservableValidationError as e:
-                        logging.error("Caught an exception: {}".format(e))
+                        logging.error(f"Caught an exception: {e}")
 
             observable.add_context(result)
 
@@ -482,7 +480,7 @@ class ThreatMinerReverseWHOIS(OneShotAnalytics, ThreatMinerApi):
                     )
                 )
             except ObservableValidationError as e:
-                logging.error("Caught an exception: {}".format(e))
+                logging.error(f"Caught an exception: {e}")
 
         observable.add_context(result)
         return list(links)

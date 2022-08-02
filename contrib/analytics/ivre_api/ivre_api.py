@@ -188,15 +188,15 @@ def _handle_cert(dbase, rec, links):
     if commonname:
         while commonname.startswith("*."):
             commonname = commonname[2:]
-        if commonname:
-            _try_link(
-                links,
-                cert,
-                Hostname,
-                commonname,
-                "cert-commonname",
-                "IVRE - X509 Subject commonName",
-            )
+    if commonname:
+        _try_link(
+            links,
+            cert,
+            Hostname,
+            commonname,
+            "cert-commonname",
+            "IVRE - X509 Subject commonName",
+        )
     for san in rec["infos"].get("san", []):
         if san.startswith("DNS:"):
             san = san[4:]
@@ -207,20 +207,17 @@ def _handle_cert(dbase, rec, links):
                     links, cert, Hostname, san, "cert-san", "IVRE - X509 subjectAltName"
                 )
         elif san.startswith("IP Address:"):
-            san = san[11:]
-            if san:
+            if san := san[11:]:
                 _try_link(
                     links, cert, Ip, san, "cert-san", "IVRE - X509 subjectAltName"
                 )
         elif san.startswith("email:"):
-            san = san[6:]
-            if san:
+            if san := san[6:]:
                 _try_link(
                     links, cert, Email, san, "cert-san", "IVRE - X509 subjectAltName"
                 )
         elif san.startswith("URI:"):
-            san = san[4:]
-            if san:
+            if san := san[4:]:
                 _try_link(
                     links, cert, Url, san, "cert-san", "IVRE - X509 subjectAltName"
                 )
@@ -299,79 +296,76 @@ class IvrePassive(OneShotAnalytics):
             if rec["recontype"] == "DNS_ANSWER":
                 value = rec["value"]
                 hostname = Hostname.get_or_create(value=value)
-                rec_type = "dns-%s" % rec["source"].split("-", 1)[0]
+                rec_type = f'dns-{rec["source"].split("-", 1)[0]}'
                 result.setdefault(rec_type, set()).add(value)
                 links.update(
                     ip.link_to(
                         hostname,
                         rec_type,
-                        "IVRE - DNS-%s" % rec["source"],
+                        f'IVRE - DNS-{rec["source"]}',
                         first_seen=rec["firstseen"],
                         last_seen=rec["lastseen"],
                     )
                 )
 
+
             elif rec["recontype"] == "HTTP_CLIENT_HEADER_SERVER":
-                if rec["source"] == "HOST":
-                    value = rec["value"]
-                    result.setdefault("http-host", set()).add(value)
-                    _try_link(
-                        links,
-                        ip,
-                        Hostname,
-                        value,
-                        "http-host",
-                        "IVRE - HTTP Host: header",
+                if rec["source"] != "HOST":
+                    continue
+                value = rec["value"]
+                result.setdefault("http-host", set()).add(value)
+                _try_link(
+                    links,
+                    ip,
+                    Hostname,
+                    value,
+                    "http-host",
+                    "IVRE - HTTP Host: header",
+                    first_seen=rec["firstseen"],
+                    last_seen=rec["lastseen"],
+                )
+            elif rec["recontype"] == "HTTP_SERVER_HEADER":
+                if rec["source"] != "SERVER":
+                    continue
+                value = rec["value"]
+                result.setdefault("http-server", set()).add(value)
+                links.update(
+                    ip.link_to(
+                        Text.get_or_create(value=value),
+                        "http-server",
+                        "IVRE - HTTP Server: header",
                         first_seen=rec["firstseen"],
                         last_seen=rec["lastseen"],
                     )
-                else:
-                    continue
-            elif rec["recontype"] == "HTTP_SERVER_HEADER":
-                if rec["source"] == "SERVER":
-                    value = rec["value"]
-                    result.setdefault("http-server", set()).add(value)
-                    links.update(
-                        ip.link_to(
-                            Text.get_or_create(value=value),
-                            "http-server",
-                            "IVRE - HTTP Server: header",
-                            first_seen=rec["firstseen"],
-                            last_seen=rec["lastseen"],
-                        )
-                    )
-                else:
-                    continue
+                )
             elif rec["recontype"] == "HTTP_CLIENT_HEADER":
-                if rec["source"] == "USER-AGENT":
-                    value = rec["value"]
-                    result.setdefault("http-user-agent", set()).add(value)
-                    links.update(
-                        ip.link_to(
-                            Text.get_or_create(value=value),
-                            "http-server",
-                            "IVRE - HTTP User-Agent: header",
-                            first_seen=rec["firstseen"],
-                            last_seen=rec["lastseen"],
-                        )
-                    )
-                else:
+                if rec["source"] != "USER-AGENT":
                     continue
+                value = rec["value"]
+                result.setdefault("http-user-agent", set()).add(value)
+                links.update(
+                    ip.link_to(
+                        Text.get_or_create(value=value),
+                        "http-server",
+                        "IVRE - HTTP User-Agent: header",
+                        first_seen=rec["firstseen"],
+                        last_seen=rec["lastseen"],
+                    )
+                )
             elif rec["recontype"] == "SSL_SERVER":
-                if rec["source"] == "cert":
-                    cert = _handle_cert(db.passive, rec, links)
-                    result.setdefault("ssl-cert", set()).add(cert.value)
-                    links.update(
-                        ip.link_to(
-                            cert,
-                            "ssl-cert",
-                            "IVRE - SSL X509 certificate",
-                            first_seen=rec["firstseen"],
-                            last_seen=rec["lastseen"],
-                        )
-                    )
-                else:
+                if rec["source"] != "cert":
                     continue
+                cert = _handle_cert(db.passive, rec, links)
+                result.setdefault("ssl-cert", set()).add(cert.value)
+                links.update(
+                    ip.link_to(
+                        cert,
+                        "ssl-cert",
+                        "IVRE - SSL X509 certificate",
+                        first_seen=rec["firstseen"],
+                        last_seen=rec["lastseen"],
+                    )
+                )
             else:
                 continue
 
@@ -402,22 +396,24 @@ class IvrePassive(OneShotAnalytics):
                 links.update(
                     Ip.get_or_create(value=rec["addr"]).link_to(
                         host,
-                        "dns-%s" % rec["source"].split("-", 1)[0],
-                        "IVRE - DNS-%s" % rec["source"],
+                        f'dns-{rec["source"].split("-", 1)[0]}',
+                        f'IVRE - DNS-{rec["source"]}',
                         first_seen=rec["firstseen"],
                         last_seen=rec["lastseen"],
                     )
                 )
+
             else:
                 links.update(
                     host.link_to(
                         Hostname.get_or_create(value=rec["targetval"]),
-                        "dns-%s" % rec["source"].split("-", 1)[0],
-                        "IVRE - DNS-%s" % rec["source"],
+                        f'dns-{rec["source"].split("-", 1)[0]}',
+                        f'IVRE - DNS-{rec["source"]}',
                         first_seen=rec["firstseen"],
                         last_seen=rec["lastseen"],
                     )
                 )
+
                 result.append(rec)
 
         results.update(raw=pformat(result))

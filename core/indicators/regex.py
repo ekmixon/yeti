@@ -11,7 +11,7 @@ class Regex(Indicator):
         try:
             re.compile(self.pattern)
         except re.error as e:
-            raise IndicatorValidationError("Regex compilation error {}:".format(e))
+            raise IndicatorValidationError(f"Regex compilation error {e}:")
 
     def __init__(self, *args, **kwargs):
         super(Regex, self).__init__(*args, **kwargs)
@@ -25,4 +25,4 @@ class Regex(Indicator):
 
     def match(self, value):
         if not self.error:
-            return True if self.compiled_regex.search(value) else False
+            return bool(self.compiled_regex.search(value))

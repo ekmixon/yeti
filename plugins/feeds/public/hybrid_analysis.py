@@ -28,7 +28,7 @@ class HybridAnalysis(Feed):
 
         first_seen = item["analysis_start_time"]
 
-        f_hyb = File.get_or_create(value="FILE:{}".format(item["sha256"]))
+        f_hyb = File.get_or_create(value=f'FILE:{item["sha256"]}')
 
         sha256 = Hash.get_or_create(value=item["sha256"])
         f_hyb.active_link_to(sha256, "sha256", self.name)
@@ -97,13 +97,11 @@ class HybridAnalysis(Feed):
             for extracted_file in item["extracted_files"]:
                 context_file_dropped = {"source": self.name}
 
-                if not "sha256" in extracted_file:
+                if "sha256" not in extracted_file:
                     logging.error(extracted_file)
                     continue
 
-                new_file = File.get_or_create(
-                    value="FILE:{}".format(extracted_file["sha256"])
-                )
+                new_file = File.get_or_create(value=f'FILE:{extracted_file["sha256"]}')
                 sha256_new_file = Hash.get_or_create(value=extracted_file["sha256"])
                 sha256_new_file.add_source("feed")
 

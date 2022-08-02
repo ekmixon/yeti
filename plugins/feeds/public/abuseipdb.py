@@ -22,10 +22,8 @@ class AbuseIPDB(Feed):
         if not api_key:
             raise Exception("Your abuseIPDB API key is not set in the yeti.conf file")
 
-        self.source = (
-            "https://api.abuseipdb.com/api/v2/blacklist?&key=%s&plaintext&limit=10000"
-            % (api_key)
-        )
+        self.source = f"https://api.abuseipdb.com/api/v2/blacklist?&key={api_key}&plaintext&limit=10000"
+
         # change the limit rate if you subscribe to a paid plan
         for line in self.update_lines():
             self.analyze(line)

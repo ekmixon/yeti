@@ -27,18 +27,19 @@ class CybercrimeAtmTracker(Feed):
         ):
 
             pub_date = parse_date_to_utc(item["pubDate"])
-            if self.last_run is not None:
-                if since_last_run > pub_date:
-                    continue
+            if self.last_run is not None and since_last_run > pub_date:
+                continue
 
             self.analyze(item, pub_date)
 
     def analyze(self, item, pub_date):  # pylint: disable=arguments-differ
         observable_sample = item["title"]
-        context_sample = {}
-        context_sample["description"] = "ATM sample"
-        context_sample["date_added"] = pub_date
-        context_sample["source"] = self.name
+        context_sample = {
+            "description": "ATM sample",
+            "date_added": pub_date,
+            "source": self.name,
+        }
+
         family = False
         if " - " in observable_sample:
             family, observable_sample = observable_sample.split(" - ")

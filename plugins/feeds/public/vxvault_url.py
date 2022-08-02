@@ -36,7 +36,5 @@ class VXVaultUrl(Feed):
                 url.tag(tags)
             except ObservableValidationError as e:
                 logging.error(
-                    "While processing the following line we hit an error {}, {}".format(
-                        data, e
-                    )
+                    f"While processing the following line we hit an error {data}, {e}"
                 )

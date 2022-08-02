@@ -25,7 +25,7 @@ class ExportTemplate(YetiDocument):
     def render(self, elements, output_filename):
         env = Environment(loader=FileSystemLoader("core/web/frontend/templates"))
         template = env.from_string(self.template)
-        temp_filename = "{}.temp".format(output_filename)
+        temp_filename = f"{output_filename}.temp"
         m = hashlib.md5()
         with codecs.open(temp_filename, "w+", encoding="utf-8") as tmp:
             for chunk in template.stream(elements=elements):
@@ -68,14 +68,14 @@ def execute_export(export_id):
 
     try:
         if export.enabled:
-            logging.debug("Running export {}".format(export.name))
+            logging.debug(f"Running export {export.name}")
             export.update_status("Exporting...")
             export.hash_md5 = export.execute()
             export.update_status("OK")
         else:
-            logging.debug("Export {} has been disabled".format(export.name))
+            logging.debug(f"Export {export.name} has been disabled")
     except Exception as e:
-        msg = "ERROR executing export: {}".format(e)
+        msg = f"ERROR executing export: {e}"
         logging.error(msg)
         logging.error(traceback.format_exc())
         export.update_status(msg)
@@ -122,17 +122,18 @@ class Export(ScheduleEntry):
             Q(tags__not__size=0, tags__match={"fresh": True})
             & q_include
             & q_exclude
-            & Q(_cls="Observable.{}".format(self.acts_on))
+            & Q(_cls=f"Observable.{self.acts_on}")
         )
+
 
         return self.template.render(
             self.filter_ignore_tags(Observable.objects(q).no_cache()), self.output_file
         )
 
     def filter_ignore_tags(self, elements):
-        ignore = set([t.name for t in self.ignore_tags])
+        ignore = {t.name for t in self.ignore_tags}
         for e in elements:
-            if set([t.name for t in e.tags]) - ignore:
+            if {t.name for t in e.tags} - ignore:
                 yield e
 
     def info(self):

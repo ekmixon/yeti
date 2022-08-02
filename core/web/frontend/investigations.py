@@ -28,9 +28,10 @@ class InvestigationView(GenericView):
         investigation = get_object_or_404(Investigation, id=id)
         if group_user_permission(investigation):
             return render_template(
-                "{}/graph.html".format(self.klass.__name__.lower()),
+                f"{self.klass.__name__.lower()}/graph.html",
                 investigation=bson_renderer(investigation.info()),
             )
+
 
         abort(403)
 
@@ -48,7 +49,7 @@ class InvestigationView(GenericView):
         investigation.add([], [node])
 
         return render_template(
-            "{}/graph.html".format(self.klass.__name__.lower()),
+            f"{self.klass.__name__.lower()}/graph.html",
             investigation=bson_renderer(investigation.info()),
         )
 
@@ -58,7 +59,7 @@ class InvestigationView(GenericView):
         results = get_object_or_404(ImportResults, id=id)
 
         return render_template(
-            "{}/import_wait.html".format(self.klass.__name__.lower()),
+            f"{self.klass.__name__.lower()}/import_wait.html",
             import_results=results,
         )
 
@@ -67,48 +68,46 @@ class InvestigationView(GenericView):
     def inv_import(self):
         if request.method == "GET":
             return render_template(
-                "{}/import.html".format(self.klass.__name__.lower()),
+                f"{self.klass.__name__.lower()}/import.html",
                 groups=get_user_groups(),
             )
-        else:
-            text = request.form.get("text")
-            url = request.form.get("url")
-            sharing = request.form.get("sharing")
 
-            if text:
-                investigation = Investigation(
-                    created_by=current_user.username, import_text=text
+        text = request.form.get("text")
+        url = request.form.get("url")
+        sharing = request.form.get("sharing")
+
+        if text:
+            investigation = Investigation(
+                created_by=current_user.username, import_text=text
+            )
+            # set sharing permissions
+            investigation.save()
+            investigation.sharing_permissions(sharing)
+            return redirect(
+                url_for(
+                    "frontend.InvestigationView:import_from", id=investigation.id
                 )
-                # set sharing permissions
-                investigation.save()
-                investigation.sharing_permissions(sharing)
+            )
+        else:
+            try:
+                if url:
+                    import_method = ImportMethod.objects.get(acts_on="url")
+                    results = import_method.run(url)
+                elif "file" in request.files:
+                    target = AttachedFile.from_upload(request.files["file"])
+                    import_method = ImportMethod.objects.get(
+                        acts_on=target.content_type
+                    )
+                    results = import_method.run(target)
+                else:
+                    flash("You need to provide an input", "danger")
+                    return redirect(request.referrer)
                 return redirect(
-                    url_for(
-                        "frontend.InvestigationView:import_from", id=investigation.id
-                    )
+                    url_for("frontend.InvestigationView:import_wait", id=results.id)
                 )
-            else:
-                try:
-                    if url:
-                        import_method = ImportMethod.objects.get(acts_on="url")
-                        results = import_method.run(url)
-                    elif "file" in request.files:
-                        target = AttachedFile.from_upload(request.files["file"])
-                        import_method = ImportMethod.objects.get(
-                            acts_on=target.content_type
-                        )
-                        results = import_method.run(target)
-                    else:
-                        flash("You need to provide an input", "danger")
-                        return redirect(request.referrer)
-                    return redirect(
-                        url_for("frontend.InvestigationView:import_wait", id=results.id)
-                    )
-                except DoesNotExist:
-                    flash("This file type is not supported.", "danger")
-                    return render_template(
-                        "{}/import.html".format(self.klass.__name__.lower())
-                    )
+            except DoesNotExist:
+                flash("This file type is not supported.", "danger")
+                return render_template(f"{self.klass.__name__.lower()}/import.html")
 
     @route("/<id>/import", methods=["GET"])
     @requires_permissions("write", "investigation")
@@ -117,7 +116,7 @@ class InvestigationView(GenericView):
         observables = Observable.from_string(investigation.import_text)
 
         return render_template(
-            "{}/import_from.html".format(self.klass.__name__.lower()),
+            f"{self.klass.__name__.lower()}/import_from.html",
             investigation=investigation,
             observables=bson_renderer(observables),
         )

@@ -38,17 +38,15 @@ class MalshareAPI(object):
                 return response.json()
             else:
                 raise GenericYetiError(
-                    "Could not retrieve feed, HTTP response: {}".format(
-                        response.status_code
-                    )
+                    f"Could not retrieve feed, HTTP response: {response.status_code}"
                 )
+
         except Exception:
             # TODO(sebdraven): Catch a better exception
             raise GenericYetiError(
-                "Could not retrieve feed, HTTP response: {}".format(
-                    response.status_code
-                )
+                f"Could not retrieve feed, HTTP response: {response.status_code}"
             )
+
         return None
 
 
@@ -86,10 +84,9 @@ class MalshareQuery(OneShotAnalytics, MalshareAPI):
                     )
                 except ObservableValidationError:
                     logging.error(
-                        "An error occurred when trying to add {} to the database".format(
-                            source.strip()
-                        )
+                        f"An error occurred when trying to add {source.strip()} to the database"
                     )
+
             result["nb C2"] = len(json_result["SOURCES"])
         try:
             new_hash = Hash.get_or_create(value=json_result["MD5"])
@@ -102,9 +99,8 @@ class MalshareQuery(OneShotAnalytics, MalshareAPI):
             )
         except ObservableValidationError:
             logging.error(
-                "An error occurred when trying to add hashes {} to the database".format(
-                    json_string
-                )
+                f"An error occurred when trying to add hashes {json_string} to the database"
             )
+
 
         return list(links)

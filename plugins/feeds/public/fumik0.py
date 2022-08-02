@@ -20,7 +20,7 @@ class Fumik0Tracker(Feed):
         for index, block in self.update_json(filter_row="first_seen"):
             self.analyze(block)
 
-    def analyze(self, block):  # pylint: disable=arguments-differ
+    def analyze(self, block):    # pylint: disable=arguments-differ
 
         """
         block example
@@ -38,16 +38,17 @@ class Fumik0Tracker(Feed):
         """
         url = block["server"]["url"]
         if "http" not in url:
-            url = "http://" + url
-        context = {}
-        context["date_added"] = block["first_seen"]
-        context["as"] = block["server"]["AS"]
-        context["country"] = block["server"]["country"]
-        context["ip"] = block["server"]["ip"]
-        context["source"] = self.name
-        context["md5"] = block["hash"]["md5"]
-        context["sha1"] = block["hash"]["sha1"]
-        context["sha256"] = block["hash"]["sha256"]
+            url = f"http://{url}"
+        context = {
+            "date_added": block["first_seen"],
+            "as": block["server"]["AS"],
+            "country": block["server"]["country"],
+            "ip": block["server"]["ip"],
+            "source": self.name,
+            "md5": block["hash"]["md5"],
+            "sha1": block["hash"]["sha1"],
+            "sha256": block["hash"]["sha256"],
+        }
 
         url_data = None
         try:

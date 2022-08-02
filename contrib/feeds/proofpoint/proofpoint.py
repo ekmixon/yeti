@@ -225,15 +225,13 @@ class ThreatInsight(Feed):
 
         log.info("Found %d new threat on campaign, new to us", len(threats))
         # there is a bug here...
-        log.debug(
-            ", ".join(["%s:%s" % (t.__class__.__name__, t.value) for t in threats])
-        )
+        log.debug(", ".join([f"{t.__class__.__name__}:{t.value}" for t in threats]))
         return threats
 
     @staticmethod
     def _get_all_threats(messages):
         # parse all message metadata to identify all unique threats
-        threats = dict()
+        threats = {}
         for msg in messages:
             # log.debug(pprint.pformat(msg))
             for infomap in msg["threatsInfoMap"]:
@@ -242,20 +240,22 @@ class ThreatInsight(Feed):
 
     @staticmethod
     def _get_messages_for_threat(messages, threat):
-        # get all messages associated to a threat
-        events = [
+        return [
             _
             for _ in messages
             if len(
-                [t for t in _["threatsInfoMap"] if t["threatID"] == threat["threatID"]]
+                [
+                    t
+                    for t in _["threatsInfoMap"]
+                    if t["threatID"] == threat["threatID"]
+                ]
             )
         ]
-        return events
 
     @staticmethod
     def _make_threat_nodes(threat, context, tags):
         # extract Url and Hash info
-        threats = dict()
+        threats = {}
         if threat["threatStatus"] != "active":
             # FIXME, clear out false positive ?
             log.warning(
@@ -434,8 +434,8 @@ class ThreatInsight(Feed):
 
     @staticmethod
     def _make_context_from_notes(evidence_list):
-        notes = list(set([e["note"] for e in evidence_list if "note" in e]))
-        context = dict()
+        notes = list({e["note"] for e in evidence_list if "note" in e})
+        context = {}
         if len(notes) == 1:
             context["note"] = notes[0]
         elif len(notes) > 1:
@@ -592,17 +592,18 @@ class ThreatInsight(Feed):
         attach_unsupported = dict(
             [(_, 0) for _ in ["UNSUPPORTED_TYPE", "TOO_SMALL", None]]
         )
-        event_nodes = list()
+        event_nodes = []
         for msg in events:
             create_t = datetime.strptime(msg["messageTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
             # PPS unique value
             guid = Text.get_or_create(
-                value="proofpoint://%s" % msg["GUID"],
+                value=f'proofpoint://{msg["GUID"]}',
                 created=create_t,
                 context=[context],
             )
+
             log.debug("Event {msg}".format(msg=msg["messageID"]))
-            message_contents = list()
+            message_contents = []
             src_ip = Ip.get_or_create(
                 value=msg["senderIP"], created=create_t, context=[context]
             )
@@ -666,8 +667,7 @@ class ThreatInsight(Feed):
     def _make_tenant_base_url(self):
         # Web UI URL for humans
         ti_base_url = "https://threatinsight.proofpoint.com"
-        tenant_base_url = "%s/%s" % (ti_base_url, self.config["tenant_id"])
-        return tenant_base_url
+        return f'{ti_base_url}/{self.config["tenant_id"]}'
 
     def _make_actor_web_url(self, actor_id):
         return "/".join([self._make_tenant_base_url(), "actor", actor_id])
@@ -685,9 +685,7 @@ def _response(response):
 
 
 def _filter_response(response):
-    if response.status_code == 429:
-        raise requests.ConnectionError(response.status_code, response.text)
-    elif response.status_code != 200:
+    if response.status_code == 429 or response.status_code != 200:
         raise requests.ConnectionError(response.status_code, response.text)
     return response
 

@@ -21,7 +21,7 @@ class ShodanApi(object):
         try:
             return shodan.Shodan(api_key).host(observable.value)
         except shodan.APIError as e:
-            logging.error("Error: {}".format(e))
+            logging.error(f"Error: {e}")
 
 
 class ShodanQuery(OneShotAnalytics, ShodanApi):

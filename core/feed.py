@@ -47,14 +47,14 @@ def update_feed(feed_id):
 
     try:
         if f.enabled:
-            logging.debug("Running {} (ID: {})".format(f.name, f.id))
+            logging.debug(f"Running {f.name} (ID: {f.id})")
             f.update_status("Updating...")
             f.update()
             f.update_status("OK")
         else:
-            logging.debug("Feed {} has been disabled".format(f.name))
+            logging.debug(f"Feed {f.name} has been disabled")
     except GenericYetiInfo as e:
-        msg = "INFO updating feed: {}".format(e)
+        msg = f"INFO updating feed: {e}"
         logging.info(msg)
         f.update_status(msg)
         f.modify(lock=False)
@@ -64,7 +64,7 @@ def update_feed(feed_id):
         import traceback
 
         logging.error(traceback.format_exc())
-        msg = "ERROR updating feed: {}".format(e)
+        msg = f"ERROR updating feed: {e}"
         logging.error(msg)
         f.update_status(msg)
         f.modify(lock=False)
@@ -127,7 +127,7 @@ class Feed(ScheduleEntry):
         if os.path.exists(feed_file):
             with open(feed_file, "r") as f:
                 # requires to remove newline for correct comparison
-                content = set([line.strip() for line in f.readlines()])
+                content = {line.strip() for line in f.readlines()}
 
         return content
 
@@ -211,7 +211,7 @@ class Feed(ScheduleEntry):
                     quoting=True,
                     skipinitialspace=True,
                 )
-            elif header and comment and not names:
+            elif header and comment:
                 df = pd.read_csv(
                     StringIO(feed),
                     delimiter=delimiter,
@@ -224,7 +224,7 @@ class Feed(ScheduleEntry):
                     skipinitialspace=True,
                 )
 
-            elif not header and comment and not names:
+            elif not header and comment:
                 df = pd.read_csv(
                     StringIO(feed),
                     delimiter=delimiter,
@@ -235,7 +235,7 @@ class Feed(ScheduleEntry):
                     quoting=True,
                     skipinitialspace=True,
                 )
-            elif not header and not comment and not names:
+            elif not header and not names:
                 df = pd.read_csv(
                     StringIO(feed),
                     delimiter=delimiter,
@@ -245,73 +245,70 @@ class Feed(ScheduleEntry):
                     quoting=True,
                     skipinitialspace=True,
                 )
+        elif comment and names:
+            df = pd.read_csv(
+                StringIO(feed),
+                delimiter=delimiter,
+                comment=comment,
+                names=names,
+                quotechar='"',
+                quoting=True,
+                skipinitialspace=True,
+            )
+        elif not comment and names:
+            df = pd.read_csv(
+                StringIO(feed),
+                delimiter=delimiter,
+                comment=comment,
+                names=names,
+                quotechar='"',
+                quoting=True,
+                skipinitialspace=True,
+            )
+        elif header and not comment:
+            df = pd.read_csv(
+                StringIO(feed),
+                delimiter=delimiter,
+                header=header,
+                quotechar='"',
+                quoting=True,
+                skipinitialspace=True,
+            )
+        elif header:
+            df = pd.read_csv(
+                StringIO(feed),
+                delimiter=delimiter,
+                header=header,
+                comment=comment,
+                quotechar='"',
+                quoting=True,
+                skipinitialspace=True,
+            )
+
+        elif comment:
+            df = pd.read_csv(
+                StringIO(feed),
+                delimiter=delimiter,
+                comment=comment,
+                quotechar='"',
+                quoting=True,
+                skipinitialspace=True,
+            )
         else:
-
-            if comment and names:
-                df = pd.read_csv(
-                    StringIO(feed),
-                    delimiter=delimiter,
-                    comment=comment,
-                    names=names,
-                    quotechar='"',
-                    quoting=True,
-                    skipinitialspace=True,
-                )
-            elif not comment and names:
-                df = pd.read_csv(
-                    StringIO(feed),
-                    delimiter=delimiter,
-                    comment=comment,
-                    names=names,
-                    quotechar='"',
-                    quoting=True,
-                    skipinitialspace=True,
-                )
-            elif header and not comment and not names:
-                df = pd.read_csv(
-                    StringIO(feed),
-                    delimiter=delimiter,
-                    header=header,
-                    quotechar='"',
-                    quoting=True,
-                    skipinitialspace=True,
-                )
-            elif header and comment and not names:
-                df = pd.read_csv(
-                    StringIO(feed),
-                    delimiter=delimiter,
-                    header=header,
-                    comment=comment,
-                    quotechar='"',
-                    quoting=True,
-                    skipinitialspace=True,
-                )
-
-            elif not header and comment and not names:
-                df = pd.read_csv(
-                    StringIO(feed),
-                    delimiter=delimiter,
-                    comment=comment,
-                    quotechar='"',
-                    quoting=True,
-                    skipinitialspace=True,
-                )
-            elif not header and not comment and not names:
-                df = pd.read_csv(
-                    StringIO(feed),
-                    delimiter=delimiter,
-                    quotechar='"',
-                    quoting=True,
-                    skipinitialspace=True,
-                )
+            df = pd.read_csv(
+                StringIO(feed),
+                delimiter=delimiter,
+                quotechar='"',
+                quoting=True,
+                skipinitialspace=True,
+            )
 
         return df
 
     def _unzip_content(self, data):
         f = ZipFile(BytesIO(data))
         name = f.namelist()[0]
-        unzip_data = f.read(name)
-        return unzip_data
+        return f.read(name)
 
     def _make_request(
         self,
@@ -362,18 +359,14 @@ class Feed(ScheduleEntry):
             )
 
         if r.status_code != 200:
-            raise GenericYetiError(
-                "{} returns code: {}".format(self.source, r.status_code)
-            )
-        if sort:
-            if self.last_run is not None and r.headers.get("Last-Modified"):
-                last_mod = parser.parse(r.headers["Last-Modified"])
-                if self.last_run and self.last_run > last_mod.replace(tzinfo=None):
-                    raise GenericYetiInfo(
-                        "Last modified date: {} returns code: {}".format(
-                            last_mod, r.status_code
-                        )
-                    )
+            raise GenericYetiError(f"{self.source} returns code: {r.status_code}")
+        if sort and self.last_run is not None and r.headers.get("Last-Modified"):
+            last_mod = parser.parse(r.headers["Last-Modified"])
+            if self.last_run and self.last_run > last_mod.replace(tzinfo=None):
+                raise GenericYetiInfo(
+                    f"Last modified date: {last_mod} returns code: {r.status_code}"
+                )
+
 
         return r
 
@@ -411,11 +404,8 @@ class Feed(ScheduleEntry):
 
         tree = ET.fromstring(data)
 
-        for item in tree.findall(".//{}".format(main_node)):
-            context = {}
-            for field in children:
-                context[field] = item.findtext(field)
-
+        for item in tree.findall(f".//{main_node}"):
+            context = {field: item.findtext(field) for field in children}
             context["source"] = self.name
 
             yield context
@@ -436,11 +426,9 @@ class Feed(ScheduleEntry):
         assert self.source is not None
 
         r = self._make_request(headers=headers, auth=auth, verify=verify)
-        feed = self._temp_feed_data_compare(
+        yield from self._temp_feed_data_compare(
             r.content.decode("utf-8", "backslashreplace")
         )
-        for line in feed:
-            yield line
 
     def utf_8_encoder(self, unicode_csv_data):
         for line in unicode_csv_data:
@@ -541,10 +529,7 @@ class Feed(ScheduleEntry):
             verify=verify,
         )
 
-        if key:
-            content = r.json().get(key)
-        else:
-            content = r.json()
+        content = r.json().get(key) if key else r.json()
         if not content:
             return []
 

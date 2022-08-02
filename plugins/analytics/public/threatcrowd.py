@@ -17,7 +17,7 @@ class ThreatCrowdAPI(object):
         base_url_api = "https://www.threatcrowd.org/searchApi/v2"
         if isinstance(observable, Hostname):
 
-            url = base_url_api + "/domain/report/"
+            url = f"{base_url_api}/domain/report/"
             params = {"domain": observable.value}
             try:
                 res = requests.get(url, params)
@@ -25,11 +25,11 @@ class ThreatCrowdAPI(object):
                 if res.ok:
                     return res.json()
             except Exception as e:
-                print("Exception while getting domain report {}".format(e.message))
+                print(f"Exception while getting domain report {e.message}")
                 return None
 
         elif isinstance(observable, Email):
-            url = base_url_api + "/email/report/"
+            url = f"{base_url_api}/email/report/"
             params = {"email": observable.value}
             try:
                 res = requests.get(url, params)
@@ -37,10 +37,10 @@ class ThreatCrowdAPI(object):
                 if res.ok:
                     return res.json()
             except Exception as e:
-                print("Exception while getting email report {}".format(e.message))
+                print(f"Exception while getting email report {e.message}")
                 return None
         elif isinstance(observable, Ip):
-            url = base_url_api + "/ip/report/"
+            url = f"{base_url_api}/ip/report/"
             print(url)
             params = {"ip": observable.value}
             print(params)
@@ -50,10 +50,10 @@ class ThreatCrowdAPI(object):
                 if res.ok:
                     return res.json()
             except Exception as e:
-                print("Exception while getting email report {}".format(e.message))
+                print(f"Exception while getting email report {e.message}")
                 return None
         elif isinstance(observable, Hash):
-            url = base_url_api + "/file/report/"
+            url = f"{base_url_api}/file/report/"
             params = {"resource": observable.value}
             try:
                 res = requests.get(url, params)
@@ -61,7 +61,7 @@ class ThreatCrowdAPI(object):
                 if res.ok:
                     return res.json()
             except Exception as e:
-                print("Exception while getting email report {}".format(e.message))
+                print(f"Exception while getting email report {e.message}")
                 return None
 
 
@@ -89,27 +89,28 @@ class ThreatCrowdQuery(ThreatCrowdAPI, OneShotAnalytics):
                 result["ip on this domains"] = 0
 
                 for ip in json_result["resolutions"]:
-                    if ip["ip_address"].strip() != observable.value:
-                        if ip["last_resolved"] != "0000-00-00":
-                            last_resolved = datetime.datetime.strptime(
-                                ip["last_resolved"], "%Y-%m-%d"
+                    if (
+                        ip["ip_address"].strip() != observable.value
+                        and ip["last_resolved"] != "0000-00-00"
+                    ):
+                        last_resolved = datetime.datetime.strptime(
+                            ip["last_resolved"], "%Y-%m-%d"
+                        )
+                        try:
+                            new_ip = Ip.get_or_create(
+                                value=ip["ip_address"].strip()
                             )
-                            try:
-                                new_ip = Ip.get_or_create(
-                                    value=ip["ip_address"].strip()
+                            links.update(
+                                new_ip.active_link_to(
+                                    observable, "IP", "ThreatCrowd", last_resolved
                                 )
-                                links.update(
-                                    new_ip.active_link_to(
-                                        observable, "IP", "ThreatCrowd", last_resolved
-                                    )
-                                )
-                                result["ip on this domains"] += 1
-                            except ObservableValidationError:
-                                logging.error(
-                                    "An error occurred when trying to add subdomain {} to the database".format(
-                                        ip["ip_address"]
-                                    )
-                                )
+                            )
+                            result["ip on this domains"] += 1
+                        except ObservableValidationError:
+                            logging.error(
+                                f'An error occurred when trying to add subdomain {ip["ip_address"]} to the database'
+                            )
+
 
             if "emails" in json_result:
 
@@ -126,10 +127,9 @@ class ThreatCrowdQuery(ThreatCrowdAPI, OneShotAnalytics):
                         result["nb emails"] += 1
                     except ObservableValidationError:
                         logging.error(
-                            "An error occurred when trying to add email {} to the database".format(
-                                email
-                            )
+                            f"An error occurred when trying to add email {email} to the database"
                         )
+
 
             if "subdomains" in json_result:
 
@@ -146,10 +146,9 @@ class ThreatCrowdQuery(ThreatCrowdAPI, OneShotAnalytics):
                         result["nb subdomains"] += 1
                     except ObservableValidationError:
                         logging.error(
-                            "An error occurred when trying to add subdomain {} to the database".format(
-                                subdomain
-                            )
+                            f"An error occurred when trying to add subdomain {subdomain} to the database"
                         )
+
 
         if isinstance(observable, Ip):
 
@@ -174,10 +173,9 @@ class ThreatCrowdQuery(ThreatCrowdAPI, OneShotAnalytics):
                             result["domains resolved"] += 1
                         except ObservableValidationError:
                             logging.error(
-                                "An error occurred when trying to add domain {} to the database".format(
-                                    domain["domain"]
-                                )
+                                f'An error occurred when trying to add domain {domain["domain"]} to the database'
                             )
+
 
             if "hashes" in json_result and len(json_result["hashes"]) > 0:
                 result["malwares"] = 0
@@ -188,17 +186,20 @@ class ThreatCrowdQuery(ThreatCrowdAPI, OneShotAnalytics):
                     )
                     result["malwares"] += 1
 
-        if isinstance(observable, Email):
-            if "domains" in json_result and len(json_result) > 0:
-                result["domains recorded by email"] = 0
-                for domain in json_result["domains"]:
-                    new_domain = Hostname.get_or_create(value=domain)
-                    links.update(
-                        new_domain.active_link_to(
-                            observable, "recorded by", "ThreatCrowd"
-                        )
+        if (
+            isinstance(observable, Email)
+            and "domains" in json_result
+            and len(json_result) > 0
+        ):
+            result["domains recorded by email"] = 0
+            for domain in json_result["domains"]:
+                new_domain = Hostname.get_or_create(value=domain)
+                links.update(
+                    new_domain.active_link_to(
+                        observable, "recorded by", "ThreatCrowd"
                     )
-                    result["domains recorded by email"] += 1
+                )
+                result["domains recorded by email"] += 1
 
         if isinstance(observable, Hash):
             result["nb c2"] = 0

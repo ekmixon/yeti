@@ -30,7 +30,7 @@ class ObservableView(GenericView):
     @requires_permissions("read", "observable")
     def advanced(self):
         return render_template(
-            "{}/browse.html".format(self.klass.__name__.lower()),
+            f"{self.klass.__name__.lower()}/browse.html",
             export_templates=ExportTemplate.objects.all(),
         )
 
@@ -61,18 +61,19 @@ class ObservableView(GenericView):
                     form = klass.get_form()(request.form)
                     form.errors["generic"] = [str(e)]
                     return render_template(
-                        "{}/edit.html".format(self.klass.__name__.lower()),
+                        f"{self.klass.__name__.lower()}/edit.html",
                         form=form,
                         obj_type=klass.__name__,
                         obj=None,
                     )
+
 
             return self.handle_form(klass=guessed_type)
 
         form = klass.get_form()()
         obj = None
         return render_template(
-            "{}/edit.html".format(self.klass.__name__.lower()),
+            f"{self.klass.__name__.lower()}/edit.html",
             form=form,
             obj_type=klass.__name__,
             obj=obj,
@@ -114,14 +115,14 @@ class ObservableView(GenericView):
                             o.tag(tags)
                             obs[o.value] = o
                     except (ObservableValidationError, ValueError) as e:
-                        logging.error("Error validating {}: {}".format(txt, e))
+                        logging.error(f"Error validating {txt}: {e}")
                         invalid_observables += 1
                         continue
             else:
                 for l in lines:
                     obs[l.strip()] = l, None
 
-            if len(obs) > 0:
+            if obs:
                 data = match_observables(obs.keys())
                 userLogger.info(
                     "User %s add observable : value=%s", current_user.username, data
@@ -130,11 +131,10 @@ class ObservableView(GenericView):
             else:
                 if invalid_observables:
                     flash(
-                        "Type guessing failed for {} observables. Try setting it manually.".format(
-                            invalid_observables
-                        ),
+                        f"Type guessing failed for {invalid_observables} observables. Try setting it manually.",
                         "danger",
                     )
+
                     return render_template("observable/search.html")
 
         return render_template("observable/search.html")
@@ -156,8 +156,7 @@ class ObservableView(GenericView):
             neighbors = observable.neighbors()
             for otype in neighbors:
                 for (link, node) in neighbors[otype]:
-                    if isinstance(node, Observable):
-                        if node.tags:
-                            data["neighbors"].append((link.info(), node.info()))
+                    if isinstance(node, Observable) and node.tags:
+                        data["neighbors"].append((link.info(), node.info()))
 
         return render_template("observable/search_results.html", data=data)

@@ -91,14 +91,14 @@ class Observable(Node):
     search_regex = None
 
     @classmethod
-    def get_form(klass):
+    def get_form(cls):
         """Gets the appropriate form for a given obseravble"""
-        form = model_form(klass, exclude=klass.exclude_fields)
+        form = model_form(cls, exclude=cls.exclude_fields)
         form.tags = TagListField()
         return form
 
     def __unicode__(self):
-        return "{} ({} context)".format(self.value, len(self.context))
+        return f"{self.value} ({len(self.context)} context)"
 
     @staticmethod
     def guess_type(string):
@@ -130,18 +130,17 @@ class Observable(Node):
                     return t
 
         raise ObservableValidationError(
-            "{} was not recognized as a viable datatype".format(string)
+            f"{string} was not recognized as a viable datatype"
         )
 
     @staticmethod
     def from_string(string):
         from core.observables import Url, Ip, Hostname, Email, Hash, MacAddress
 
-        results = dict()
-        for t in [Url, Ip, Email, Hostname, Hash, MacAddress]:
-            results[t.__name__] = t.extract(string)
-
-        return results
+        return {
+            t.__name__: t.extract(string)
+            for t in [Url, Ip, Email, Hostname, Hash, MacAddress]
+        }
 
     @classmethod
     def add_text(cls, text, tags=[], force_type=None):
@@ -166,8 +165,7 @@ class Observable(Node):
 
     @classmethod
     def check_type(cls, txt):
-        match = re.match("^{}$".format(cls.regex), txt, re.UNICODE)
-        if match:
+        if match := re.match(f"^{cls.regex}$", txt, re.UNICODE):
             return cls.is_valid(match)
 
         return False
@@ -195,7 +193,7 @@ class Observable(Node):
                 continue
 
             except ValueError as e:
-                logging.error("Value error: {} - on: {}".format(e, observable.value))
+                logging.error(f"Value error: {e} - on: {observable.value}")
                 continue
 
             if observable.value not in cls.ignore:
@@ -221,7 +219,7 @@ class Observable(Node):
             self.normalize()
         else:
             raise ObservableValidationError(
-                "'{}' is not a valid '{}'".format(self.value, self.__class__.__name__)
+                f"'{self.value}' is not a valid '{self.__class__.__name__}'"
             )
 
     @staticmethod
@@ -260,7 +258,7 @@ class Observable(Node):
 
         """
         assert "source" in context
-        context = {k: v for k, v in sorted(context.items(), key=operator.itemgetter(0))}
+        context = dict(sorted(context.items(), key=operator.itemgetter(0)))
         if replace_source:
             # This does not work : cannot traverse and set context atomically
             # self.modify({"context__source": c}, set__context__S=context)
@@ -290,7 +288,7 @@ class Observable(Node):
             A fresh instance of the Observable as it exists in the database.
 
         """
-        context = {k: v for k, v in sorted(context.items(), key=operator.itemgetter(0))}
+        context = dict(sorted(context.items(), key=operator.itemgetter(0)))
         self.modify(pull__context=context)
         return self.reload()
 
@@ -331,11 +329,7 @@ class Observable(Node):
         return new_tags
 
     def has_tag(self, tag_to_search):
-        for tag in self.tags:
-            if tag.name == tag_to_search:
-                return True
-        else:
-            return False
+        return any(tag.name == tag_to_search for tag in self.tags)
 
     def change_tag(self, old_tag, new_tag):
         if not self.modify(
@@ -373,7 +367,7 @@ class Observable(Node):
         new_tags = iterify(new_tags)
 
         if strict:
-            remove = set([t.name for t in self.tags]) - set(new_tags)
+            remove = {t.name for t in self.tags} - set(new_tags)
             for tag in remove:
                 self.modify(pull__tags__name=tag)
 
@@ -418,15 +412,14 @@ class Observable(Node):
         return self.reload()
 
     def get_last_tagged(self):
-        if not self.last_tagged:
-            last = datetime(1970, 1, 1)
-            for tag in self.tags:
-                if tag.last_seen > last:
-                    last = tag.last_seen
-            self.update(set__last_tagged=last)
-            return last
-        else:
+        if self.last_tagged:
             return self.last_tagged
+        last = datetime(1970, 1, 1)
+        for tag in self.tags:
+            if tag.last_seen > last:
+                last = tag.last_seen
+        self.update(set__last_tagged=last)
+        return last
 
     def get_first_tagged(self):
         first_tagged = None
@@ -453,7 +446,7 @@ class Observable(Node):
 
     def analysis_done(self, module_name):
         ts = datetime.utcnow()
-        return self.modify(**{"set__last_analyses__{}".format(module_name): ts})
+        return self.modify(**{f"set__last_analyses__{module_name}": ts})
 
     def info(self):
         i = {

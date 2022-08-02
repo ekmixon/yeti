@@ -27,9 +27,10 @@ class CybercrimeTracker(Feed):
         ):
 
             pub_date = parser.parse(item["pubDate"])
-            if self.last_run is not None:
-                if since_last_run > pub_date.replace(tzinfo=None):
-                    continue
+            if self.last_run is not None and since_last_run > pub_date.replace(
+                tzinfo=None
+            ):
+                continue
 
             self.analyze(item, pub_date)
 
@@ -40,16 +41,17 @@ class CybercrimeTracker(Feed):
         malware_family = ""
         c2_IP = ""
         if m:
-            malware_family = m.group(2)
-            c2_IP = m.group(3)
+            malware_family = m[2]
+            c2_IP = m[3]
 
         observable = item["title"]
         description = item["description"].lower()
 
-        context = {}
-        context["description"] = "{} C2 server".format(c2_IP)
-        context["date_added"] = pub_date
-        context["source"] = self.name
+        context = {
+            "description": f"{c2_IP} C2 server",
+            "date_added": pub_date,
+            "source": self.name,
+        }
 
         c2 = None
         e = None

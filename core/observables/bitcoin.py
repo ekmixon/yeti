@@ -26,10 +26,5 @@ class Bitcoin(Observable):
             re.match(r"^(1|3)[\w]{25,34}$", self.value)
             and (re.search("[A-Z]", self.value) and re.search("[0-9]", self.value))
         ):
-            raise ObservableValidationError(
-                "{} is not a valid Bitcoin address".format(self.value)
-            )
-        if self.value.startswith("1"):
-            self.format = "P2PKH"
-        else:
-            self.format = "P2SH"
+            raise ObservableValidationError(f"{self.value} is not a valid Bitcoin address")
+        self.format = "P2PKH" if self.value.startswith("1") else "P2SH"

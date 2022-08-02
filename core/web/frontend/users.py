@@ -81,18 +81,13 @@ class UserAdminView(GenericView):
         if request.method == "POST":
             for object_name, permissions in user.permissions.items():
                 if not isinstance(permissions, dict):
-                    permdict[object_name] = bool(
-                        request.form.get("{}".format(object_name), False)
-                    )
+                    permdict[object_name] = bool(request.form.get(f"{object_name}", False))
                 else:
                     if object_name not in permdict:
                         permdict[object_name] = {}
                     for p in permissions:
-                        permdict[object_name][p] = bool(
-                            request.form.get("{}_{}".format(object_name, p), False)
-                        )
+                        permdict[object_name][p] = bool(request.form.get(f"{object_name}_{p}", False))
             user.permissions = permdict
             user.save()
             flash("Permissions changed successfully", "success")
         return redirect(request.referrer)
-        return render_template("user/permissions.html", user=user)

@@ -50,7 +50,7 @@ class NetworkWhois(OneShotAnalytics):
             # Copy the subnet info into the main dict
             for key in smallest_subnet:
                 if smallest_subnet[key]:
-                    result["net_{}".format(key)] = smallest_subnet[key]
+                    result[f"net_{key}"] = smallest_subnet[key]
 
         # Add the network whois to the context if not already present
         for context in ip.context:

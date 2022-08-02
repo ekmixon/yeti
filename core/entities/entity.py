@@ -40,29 +40,26 @@ class Entity(Node):
     }
 
     def clean(self):
-        tags = []
-        for t in self.tags:
-            if t:
-                tags.append(Tag.get_or_create(name=t.lower().strip()))
+        tags = [Tag.get_or_create(name=t.lower().strip()) for t in self.tags if t]
         self.tags = [t.name for t in tags]
 
     @classmethod
-    def get_form(klass, override=None):
+    def get_form(cls, override=None):
         if override:
-            klass = override
-        form = model_form(klass, exclude=klass.exclude_fields)
+            cls = override
+        form = model_form(cls, exclude=cls.exclude_fields)
         form.tags = TagListField("Tags that will link to this entity")
         form.links = EntityListField("Bind to entities")
 
         return form
 
     def __unicode__(self):
-        return "{}".format(self.name)
+        return f"{self.name}"
 
     def action(self, target, source, verb=None):
         if not verb:
             if self.__class__.name == target.__class__.__name__:
-                verb = "Related {}".format(self.__class__.__name__)
+                verb = f"Related {self.__class__.__name__}"
             else:
                 verb = Entity.VERB_DICT.get(self.__class__.__name__, {}).get(
                     target.__class__.__name__, "Relates to"

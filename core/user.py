@@ -43,10 +43,7 @@ class User(YetiDocument):
         return self.session_token
 
     def has_settings(self, settings):
-        for setting in settings:
-            if setting not in self.settings:
-                return False
-        return True
+        return all(setting in self.settings for setting in settings)
 
     def has_permission(self, object_name, permission):
         return self.permissions.get(object_name, {}).get(permission)
@@ -55,25 +52,25 @@ class User(YetiDocument):
         return self.permissions.get(role, False)
 
     def __unicode__(self):
-        return "<User: {}>".format(self.username)
+        return f"<User: {self.username}>"
 
     @classmethod
-    def get_form(klass):
+    def get_form(cls):
         return model_form(User)
 
     @classmethod
-    def register_setting(klass, id, name, description):
-        klass.available_settings[id] = {"name": name, "description": description}
+    def register_setting(cls, id, name, description):
+        cls.available_settings[id] = {"name": name, "description": description}
 
     @classmethod
-    def get_available_settings(klass):
+    def get_available_settings(cls):
         # We have to load all OneShotAnalytics in order to make sure
         # available_settings are up to date
         from core.analytics import OneShotAnalytics
 
         list(OneShotAnalytics.objects)
 
-        return klass.available_settings
+        return cls.available_settings
 
     @staticmethod
     def generate_api_key():

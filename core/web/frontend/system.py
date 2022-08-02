@@ -38,12 +38,10 @@ class SystemView(FlaskView):
 
         nok = []
         for r in response:
-            for name in r:
-                if "ok" not in r[name]:
-                    nok.append(name)
+            nok.extend(name for name in r if "ok" not in r[name])
         if nok:
-            flash("Some workers failed to restart: {}".format(", ".join(nok)), "danger")
-        flash("Succesfully restarted {} workers".format(len(response)), "success")
+            flash(f'Some workers failed to restart: {", ".join(nok)}', "danger")
+        flash(f"Succesfully restarted {len(response)} workers", "success")
 
         return redirect(request.referrer)
 
@@ -75,7 +73,7 @@ class SystemView(FlaskView):
                 ScheduleEntry.unlock_all()
                 self.restart_worker()
             p = subprocess.Popen(cmd.split(" "))
-            flash("Scheduler restarted successfully (PID: {})".format(p.pid), "success")
+            flash(f"Scheduler restarted successfully (PID: {p.pid})", "success")
         else:
             flash("Error restaring scheduler", "danger")
 

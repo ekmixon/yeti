@@ -37,11 +37,10 @@ def derive(strings):
                 [n for n in a.analyze_string(observable.value) if n and n not in values]
             )
 
-    if len(new) == 0:
+    if not new:
         return values, values
-    else:
-        _, extended = derive(new + list(values))
-        return values, extended
+    _, extended = derive(new + list(values))
+    return values, extended
 
 
 def match_observables(observables, save_matches=False, fetch_neighbors=True):
@@ -64,12 +63,15 @@ def match_observables(observables, save_matches=False, fetch_neighbors=True):
 
         if fetch_neighbors:
             for link, node in o.incoming():
-                if isinstance(node, Observable):
-                    if (
+                if (
+                    isinstance(node, Observable)
+                    and (
                         link.src.value not in extended_query
                         or link.dst.value not in extended_query
-                    ) and node.tags:
-                        data["neighbors"].append((link.info(), node.info()))
+                    )
+                    and node.tags
+                ):
+                    data["neighbors"].append((link.info(), node.info()))
 
         for nodes in o.neighbors("Entity").values():
             for l, node in nodes:

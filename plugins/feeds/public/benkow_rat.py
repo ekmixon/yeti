@@ -21,21 +21,15 @@ class BenkowTrackerRat(Feed):
 
     def analyze(self, line):
 
-        context = {}
-        context["date_added"] = line["date"]
-        context["source"] = self.name
-
+        context = {"date_added": line["date"], "source": self.name}
         family = line["type"]
         url = line["url"]
         ip = line["ip"]
 
         if not url.startswith(("http://", "https://")):
-            url = "http://" + url
+            url = f"http://{url}"
 
-        tags = []
-        tags.append(family.lower())
-        tags.append("rat")
-
+        tags = [family.lower(), "rat"]
         try:
             if url:
                 url = Url.get_or_create(value=url)

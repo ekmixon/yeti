@@ -47,10 +47,7 @@ class GroupAdminView(GenericView):
             or Group.objects(admins__in=[current_user.id], id=gid, enabled=True)
         ):
             group.update(add_to_set__members=user.id)
-            flash(
-                "Added user: {} to group: {}".format(user.username, group.groupname),
-                "success",
-            )
+            flash(f"Added user: {user.username} to group: {group.groupname}", "success")
         return redirect(request.referrer)
 
     @route("/delfromgroup", methods=["GET", "POST"])
@@ -67,11 +64,10 @@ class GroupAdminView(GenericView):
         ):
             group.update(pull__members=user.id)
             flash(
-                "User: {} deleted from group: {}".format(
-                    user.username, group.groupname
-                ),
+                f"User: {user.username} deleted from group: {group.groupname}",
                 "success",
             )
+
         return redirect(request.referrer)
 
     @route("/usertoadmin", methods=["GET", "POST"])
@@ -87,10 +83,7 @@ class GroupAdminView(GenericView):
             # ToDo reload page
             group = get_object_or_404(Group, id=gid)
             group.update(add_to_set__admins=user.id)
-            flash(
-                "Added user: {} to group: {}".format(user.username, group.groupname),
-                "success",
-            )
+            flash(f"Added user: {user.username} to group: {group.groupname}", "success")
         return redirect(request.referrer)
 
     @route("/deladmin", methods=["GET", "POST"])
@@ -107,9 +100,8 @@ class GroupAdminView(GenericView):
             # ToDo reload page
             group.update(pull__admins=user.id)
             flash(
-                "User: {} deleted from admins: {}".format(
-                    user.username, group.groupname
-                ),
+                f"User: {user.username} deleted from admins: {group.groupname}",
                 "success",
             )
+
         return redirect(request.referrer)

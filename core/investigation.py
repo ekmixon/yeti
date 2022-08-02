@@ -79,9 +79,9 @@ class Investigation(Node):
     }
 
     @classmethod
-    def get_form(klass):
+    def get_form(cls):
         """Gets the appropriate form for a given investigation"""
-        form = model_form(klass, exclude=klass.exclude_fields)
+        form = model_form(cls, exclude=cls.exclude_fields)
 
         # An empty name is the same as no name
         form.name = WTFStringField("Name", filters=[lambda name: name or None])
@@ -193,10 +193,9 @@ def import_task(results_id, target):
     results = ImportResults.objects.get(id=results_id)
     import_method = results.import_method
     logging.warning(
-        "Running one-shot import {} on {}".format(
-            import_method.__class__.__name__, target
-        )
+        f"Running one-shot import {import_method.__class__.__name__} on {target}"
     )
+
     results.update(status="running")
 
     try:

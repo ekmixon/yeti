@@ -40,26 +40,19 @@ class CertPaIT(Feed):
             "item", ["title", "link", "pubDate", "description"]
         ):
             pub_date = parse_date_to_utc(item["pubDate"])
-            if self.last_run is not None:
-                if since_last_run > pub_date:
-                    continue
+            if self.last_run is not None and since_last_run > pub_date:
+                continue
 
             self.analyze(item, pub_date)
 
     def analyze(self, item, pub_date):
         md5 = item["title"].replace("MD5: ", "")
-        context = {}
-        context["date_added"] = pub_date
-        context["source"] = self.name
-        context["url"] = item["link"]
-
-        matched = self.re_generic_details.match(item["description"])
-        if matched:
-            context.update(matched.groupdict())
+        context = {"date_added": pub_date, "source": self.name, "url": item["link"]}
+        if matched := self.re_generic_details.match(item["description"]):
+            context |= matched.groupdict()
 
         for regex_compiled in self.regexes:
-            matched = regex_compiled.search(item["description"])
-            if matched:
+            if matched := regex_compiled.search(item["description"]):
                 context.update(matched.groupdict())
 
         try:

@@ -1,5 +1,6 @@
 """Unlocks locked SchedulEntries"""
 
+
 from __future__ import print_function
 import logging
 import sys
@@ -23,4 +24,4 @@ if __name__ == "__main__":
         print("Running {}...").format(f.name)
         f.lock = False
         f.save()
-        print("{} unlocked".format(f.name))
+        print(f"{f.name} unlocked")

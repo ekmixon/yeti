@@ -18,10 +18,9 @@ def webserver(args):
 
     syncdb()
     print(
-        "[+] Yeti started. Point browser to http://localhost:5000/{}".format(
-            " (debug)" if args.debug else ""
-        )
+        f'[+] Yeti started. Point browser to http://localhost:5000/{" (debug)" if args.debug else ""}'
     )
+
     webapp.run(host="0.0.0.0")
 
 

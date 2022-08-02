@@ -39,11 +39,10 @@ class BambenekOsintIpmaster(Feed):
             ip_names_servers = tokens[3].split("|")
             context_feed = tokens[4]
 
-            m = BambenekOsintIpmaster.reg.match(context_feed)
-            malware_family = ""
-            if m:
+            if m := BambenekOsintIpmaster.reg.match(context_feed):
                 malware_family = m.group(1)
-
+            else:
+                malware_family = ""
             context = {
                 "status": context_feed,
                 "name servers": names_servers,
@@ -79,4 +78,4 @@ class BambenekOsintIpmaster(Feed):
                     ip_ns_obs.add_context(context)
                     ip_ns_obs.add_source(self.name)
         else:
-            logging.error("Parsing error in line: %s" % line)
+            logging.error(f"Parsing error in line: {line}")

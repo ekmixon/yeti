@@ -57,8 +57,9 @@ class TorExitNodes(Feed):
             "version": fields[6],
             "contactinfo": fields[7],
             "source": self.name,
-            "description": "Tor exit node: %s (%s)" % (fields[1], fields[0]),
+            "description": f"Tor exit node: {fields[1]} ({fields[0]})",
         }
+
 
         try:
             ip = Ip.get_or_create(value=fields[0])

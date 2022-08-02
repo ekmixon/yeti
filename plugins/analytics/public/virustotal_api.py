@@ -41,21 +41,21 @@ class VirustotalApi(object):
             header = {"x-apikey": api_key}
             response = requests.get(url, headers=header, proxies=yeti_config.proxy)
 
-            if response.ok:
-                return response.json()
-            else:
-                return None
+            return response.json() if response.ok else None
         except Exception as e:
-            print("Exception while getting ip report {}".format(e.message))
+            print(f"Exception while getting ip report {e.message}")
             return None
 
     @staticmethod
     def process_domain(domain, attributes):
-        context = {"source": "VirusTotal"}
         links = set()
 
         timestamp_creation = attributes["creation_date"]
-        context["first_seen"] = datetime.fromtimestamp(timestamp_creation).isoformat()
+        context = {
+            "source": "VirusTotal",
+            "first_seen": datetime.fromtimestamp(timestamp_creation).isoformat(),
+        }
+
         context["whois"] = attributes["whois"]
         if "whois_date" in attributes:
             timestamp_whois_date = attributes["whois_date"]
@@ -69,11 +69,7 @@ class VirustotalApi(object):
                 related_obs = None
                 if rr["type"] == "A":
                     related_obs = Ip.get_or_create(value=rr["value"])
-                elif rr["type"] == "MX":
-                    related_obs = Hostname.get_or_create(value=rr["value"])
-                elif rr["type"] == "SOA":
-                    related_obs = Hostname.get_or_create(value=rr["value"])
-                elif rr["type"] == "NS":
+                elif rr["type"] in ["MX", "SOA", "NS"]:
                     related_obs = Hostname.get_or_create(value=rr["value"])
                 if related_obs:
                     links.update(
@@ -90,13 +86,10 @@ class VirustotalApi(object):
         if "registrar" in attributes:
             context["registrar"] = attributes["registrar"]
 
-        tags = attributes["tags"]
-        if tags:
+        if tags := attributes["tags"]:
             domain.tag(tags)
         if "popularity_ranks" in attributes:
-            alexa_rank = attributes["popularity_ranks"]
-
-            if alexa_rank:
+            if alexa_rank := attributes["popularity_ranks"]:
                 context["alexa_rank"] = alexa_rank["Alexa"]["rank"]
                 timestamp_rank = alexa_rank["Alexa"]["timestamp"]
                 context["alexa_rank_date"] = datetime.fromtimestamp(
@@ -108,7 +101,7 @@ class VirustotalApi(object):
 
             for k, v in stats_analysis.items():
                 context[k] = v
-        if "last_https_certificate" and "last_https_certificate_date" in attributes:
+        if "last_https_certificate_date" in attributes:
             context["last_https_certificate"] = attributes["last_https_certificate"]
             try:
                 timestamp_https_cert = attributes["last_https_certificate_date"]
@@ -136,7 +129,7 @@ class VirustotalApi(object):
 
         last_seen = attributes["last_analysis_date"]
         context["last_seen"] = datetime.fromtimestamp(last_seen).isoformat()
-        context["names"] = " ".join(n for n in attributes["names"])
+        context["names"] = " ".join(attributes["names"])
         tags = attributes["tags"]
         if attributes["last_analysis_results"]:
             context["raw"] = attributes["last_analysis_results"]
@@ -169,11 +162,10 @@ class VTFileIPContacted(OneShotAnalytics, VirustotalApi):
         links = set()
         context = {"source": "VirusTotal"}
 
-        endpoint = "/files/%s/contacted_ips" % observable.value
+        endpoint = f"/files/{observable.value}/contacted_ips"
         api_key = result.settings["virutotal_api_key"]
 
-        result = VirustotalApi.fetch(api_key, endpoint)
-        if result:
+        if result := VirustotalApi.fetch(api_key, endpoint):
             for data in result["data"]:
                 ip = Ip.get_or_create(value=data["id"])
 
@@ -218,13 +210,12 @@ class VTFileUrlContacted(OneShotAnalytics, VirustotalApi):
 
     @staticmethod
     def analyze(observable, result):
-        links = set()
-        context = {"source": "VirusTotal"}
-
-        endpoint = "/files/%s/contacted_urls" % observable.value
+        endpoint = f"/files/{observable.value}/contacted_urls"
         api_key = result.settings["virutotal_api_key"]
-        result = VirustotalApi.fetch(api_key, endpoint)
-        if result:
+        if result := VirustotalApi.fetch(api_key, endpoint):
+            links = set()
+            context = {"source": "VirusTotal"}
+
             for data in result["data"]:
                 if "attributes" in data:
                     attributes = data["attributes"]
@@ -260,8 +251,7 @@ class VTFileUrlContacted(OneShotAnalytics, VirustotalApi):
                     stat_files = data["attributes"]["last_analysis_stats"]
                     for k, v in stat_files.items():
                         context[k] = v
-                    tags = attributes["tags"]
-                    if tags:
+                    if tags := attributes["tags"]:
                         url.tag(tags)
 
                     url.add_context(context)
@@ -282,11 +272,9 @@ class VTDomainContacted(OneShotAnalytics, VirustotalApi):
         links = set()
         context = {"source": "VirusTotal"}
 
-        endpoint = "/files/%s/contacted_domains" % observable.value
+        endpoint = f"/files/{observable.value}/contacted_domains"
         api_key = result.settings["virutotal_api_key"]
-        result = VirustotalApi.fetch(api_key, endpoint)
-
-        if result:
+        if result := VirustotalApi.fetch(api_key, endpoint):
             for data in result["data"]:
                 hostname = Hostname.get_or_create(value=data["id"])
                 context["first_seen"] = data["attributes"]["creation_date"]
@@ -318,11 +306,9 @@ class VTFileReport(OneShotAnalytics, VirustotalApi):
         links = set()
         context = {"source": "VirusTotal"}
 
-        endpoint = "/files/%s" % observable.value
+        endpoint = f"/files/{observable.value}"
         api_key = result.settings["virutotal_api_key"]
-        result = VirustotalApi.fetch(api_key, endpoint)
-
-        if result:
+        if result := VirustotalApi.fetch(api_key, endpoint):
             links.update(
                 VirustotalApi.process_file(observable, result["data"]["attributes"])
             )
@@ -343,11 +329,9 @@ class VTDomainReport(OneShotAnalytics, VirustotalApi):
         links = set()
         context = {"source": "VirusTotal"}
 
-        endpoint = "/domains/%s" % observable.value
+        endpoint = f"/domains/{observable.value}"
         api_key = result.settings["virutotal_api_key"]
-        result = VirustotalApi.fetch(api_key, endpoint)
-
-        if result:
+        if result := VirustotalApi.fetch(api_key, endpoint):
             attributes = result["data"]["attributes"]
             links.update(VirustotalApi.process_domain(observable, attributes))
         return list(links)
@@ -367,11 +351,9 @@ class VTDomainResolution(OneShotAnalytics, VirustotalApi):
         links = set()
         context = {"source": "VirusTotal PDNS"}
 
-        endpoint = "/domains/%s/resolutions" % observable.value
+        endpoint = f"/domains/{observable.value}/resolutions"
         api_key = result.settings["virutotal_api_key"]
-        result = VirustotalApi.fetch(api_key, endpoint)
-
-        if result:
+        if result := VirustotalApi.fetch(api_key, endpoint):
             for data in result["data"]:
                 attribute = data["attributes"]
                 ip_address = attribute["ip_address"]
@@ -401,11 +383,9 @@ class VTSubdomains(OneShotAnalytics, VirustotalApi):
     @staticmethod
     def analyze(observable, result):
         links = set()
-        endpoint = "/domains/%s/subdomains" % observable.value
+        endpoint = f"/domains/{observable.value}/subdomains"
         api_key = result.settings["virutotal_api_key"]
-        result = VirustotalApi.fetch(api_key, endpoint)
-
-        if result:
+        if result := VirustotalApi.fetch(api_key, endpoint):
             for data in result["data"]:
                 context = {"source": "VirusTotal"}
                 attributes = data["attributes"]
@@ -431,7 +411,7 @@ class VTDomainComFile(OneShotAnalytics, VirustotalApi):
     @staticmethod
     def analyze(observable, result):
         links = set()
-        endpoint = "/domains/%s/communicating_files" % observable.value
+        endpoint = f"/domains/{observable.value}/communicating_files"
         api_key = result.settings["virutotal_api_key"]
         result = VirustotalApi.fetch(api_key, endpoint)
         for data in result["data"]:
@@ -457,7 +437,7 @@ class VTDomainReferrerFile(OneShotAnalytics, VirustotalApi):
     @staticmethod
     def analyze(observable, result):
         links = set()
-        endpoint = "/domains/%s/referrer_files" % observable.value
+        endpoint = f"/domains/{observable.value}/referrer_files"
         api_key = result.settings["virutotal_api_key"]
         result = VirustotalApi.fetch(api_key, endpoint)
         for data in result["data"]:
@@ -484,11 +464,9 @@ class VTIPResolution(OneShotAnalytics, VirustotalApi):
     def analyze(observable, result):
         links = set()
 
-        endpoint = "/ip_addresses/%s/resolutions" % observable.value
+        endpoint = f"/ip_addresses/{observable.value}/resolutions"
         api_key = result.settings["virutotal_api_key"]
-        result = VirustotalApi.fetch(api_key, endpoint)
-
-        if result:
+        if result := VirustotalApi.fetch(api_key, endpoint):
             for data in result["data"]:
                 context = {"source": "VirusTotal PDNS"}
                 attributes = data["attributes"]
@@ -525,7 +503,7 @@ class VTIPComFile(OneShotAnalytics, VirustotalApi):
     @staticmethod
     def analyze(observable, result):
         links = set()
-        endpoint = "/ip_addresses/%s/communicating_files" % observable.value
+        endpoint = f"/ip_addresses/{observable.value}/communicating_files"
         api_key = result.settings["virutotal_api_key"]
         result = VirustotalApi.fetch(api_key, endpoint)
 
@@ -552,7 +530,7 @@ class VTIPReferrerFile(OneShotAnalytics, VirustotalApi):
     @staticmethod
     def analyze(observable, result):
         links = set()
-        endpoint = "/ip_addresses/%s/referrer_files" % observable.value
+        endpoint = f"/ip_addresses/{observable.value}/referrer_files"
         api_key = result.settings["virutotal_api_key"]
         result = VirustotalApi.fetch(api_key, endpoint)
         for data in result["data"]:

@@ -64,7 +64,7 @@ class Onyphe:
 
         if response.status_code == requests.codes.NOT_FOUND:
 
-            raise APIError("Page Not found %s" % self.url)
+            raise APIError(f"Page Not found {self.url}")
         elif response.status_code == requests.codes.FORBIDDEN:
             raise APIError("Access Forbidden")
         elif response.status_code == requests.codes.too_many_requests:
@@ -94,8 +94,7 @@ class Onyphe:
 
         self._choose_url(uri)
 
-        data = self._request("get", payload, headers=headers)
-        if data:
+        if data := self._request("get", payload, headers=headers):
             return data
 
     def _search(self, query, **kwargs):
@@ -340,10 +339,9 @@ class OnypheAPI(object):
         elif isinstance(observable, Hostname):
             result = on_client.ctl(observable.value)
 
-        if result:
-            if result["error"] != 0:
-                logging.error(result["message"])
-                return None
+        if result and result["error"] != 0:
+            logging.error(result["message"])
+            return None
 
         return result["results"]
 
@@ -360,16 +358,12 @@ class OnypheQuery(OnypheAPI, OneShotAnalytics):
     def analyze(observable, results):
         links = set()
         on_client = Onyphe(results.settings["onyphe_api_key"])
-        json_result = OnypheAPI.fetch(on_client, observable)
-
-        if json_result:
-            result = {}
+        if json_result := OnypheAPI.fetch(on_client, observable):
             json_string = json.dumps(
                 json_result, sort_keys=True, indent=4, separators=(",", ": ")
             )
             results.update(raw=json_string)
-            result["source"] = "onyphe_query"
-            result["raw"] = json_string
+            result = {"source": "onyphe_query", "raw": json_string}
             observable.add_context(result)
 
         return list(links)

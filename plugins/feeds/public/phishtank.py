@@ -37,21 +37,21 @@ class PhishTank(Feed):
     # and tag it with 'phish'
     def analyze(self, line):
 
-        tags = ["phishing"]
-
         url = line["url"]
 
-        context = {
-            "source": self.name,
-            "phish_detail_url": line["phish_detail_url"],
-            "submission_time": line["submission_time"],
-            "verified": line["verified"],
-            "verification_time": line["verification_time"],
-            "online": line["online"],
-            "target": line["target"],
-        }
-
         if url is not None and url != "":
+            tags = ["phishing"]
+
+            context = {
+                "source": self.name,
+                "phish_detail_url": line["phish_detail_url"],
+                "submission_time": line["submission_time"],
+                "verified": line["verified"],
+                "verification_time": line["verification_time"],
+                "online": line["online"],
+                "target": line["target"],
+            }
+
             try:
                 url = Url.get_or_create(value=url)
                 url.add_context(context)

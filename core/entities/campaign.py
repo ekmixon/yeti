@@ -10,8 +10,8 @@ class Campaign(Entity):
     DISPLAY_FIELDS = Entity.DISPLAY_FIELDS + [("aliases", "Aliases")]
 
     @classmethod
-    def get_form(klass):
-        form = Entity.get_form(override=klass)
+    def get_form(cls):
+        form = Entity.get_form(override=cls)
         form.aliases = StringListField("Aliases")
         return form
 

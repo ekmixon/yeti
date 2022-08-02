@@ -29,10 +29,7 @@ class DynamicDomains(Feed):
 
         hostname = sline[0]
 
-        context = {}
-        context["source"] = self.name
-        context["provider"] = sline[0]
-
+        context = {"source": self.name, "provider": sline[0]}
         try:
             hostname = Hostname.get_or_create(value=hostname)
             hostname.add_context(context)

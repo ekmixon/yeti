@@ -53,7 +53,7 @@ class OTXAlienvault(Feed):
         context = dict(source=self.name)
         context["references"] = "\r\n".join(item["references"])
         context["description"] = item["description"]
-        context["link"] = "https://otx.alienvault.com/pulse/%s" % item["id"]
+        context["link"] = f'https://otx.alienvault.com/pulse/{item["id"]}'
 
         tags = item["tags"]
 
@@ -86,13 +86,14 @@ class OTXAlienvault(Feed):
                 if type_ind == Yara:
                     try:
                         type_ind.get_or_create(
-                            name="YARA_%s" % indicator["indicator"],
+                            name=f'YARA_{indicator["indicator"]}',
                             diamond="capability",
                             location="feeds",
                             pattern=indicator["content"],
                         )
+
                     except Exception:
-                        logging.error("Error to create indicator %s" % indicator)
+                        logging.error(f"Error to create indicator {indicator}")
 
             else:
                 logging.error("type of indicators is unknown %s", indicator["type"])

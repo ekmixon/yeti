@@ -10,18 +10,16 @@ from core.config.config import yeti_config
 celery_app = Celery("yeti")
 
 
+
+
 class CeleryConfig:
     redis_scheme = "redis"
     if yeti_config.redis.tls:
 
-        redis_scheme = redis_scheme + "s"
+        redis_scheme += "s"
 
-    BROKER_URL = "{}://{}:{}/{}".format(
-        redis_scheme,
-        yeti_config.redis.host,
-        yeti_config.redis.port,
-        yeti_config.redis.database,
-    )
+    BROKER_URL = f"{redis_scheme}://{yeti_config.redis.host}:{yeti_config.redis.port}/{yeti_config.redis.database}"
+
     CELERY_TASK_SERIALIZER = "json"
     CELERY_ACCEPT_CONTENT = ["json"]
     CELERY_IMPORTS = (
@@ -44,6 +42,7 @@ class CeleryConfig:
     }
 
 
+
 celery_app.config_from_object(CeleryConfig)
 
 
@@ -53,10 +52,7 @@ def connect_mongo(**kwargs):
     from core.config import celeryimports
     from core.yeti_plugins import get_plugins
 
-    is_tls = False
-    if yeti_config.mongodb.tls:
-        is_tls = True
-
+    is_tls = bool(yeti_config.mongodb.tls)
     connect(
         yeti_config.mongodb.database,
         host=yeti_config.mongodb.host,

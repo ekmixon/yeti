@@ -36,24 +36,23 @@ class UrlHaus(Feed):
 
         id_feed = line["id"]
         first_seen = line["dateadded"]
-        url = line["url"]
-        url_status = line["url_status"]
-        threat = line["threat"]
-        tags = line["tags"]
-        urlhaus_link = line["urlhaus_link"]
-        source = line["reporter"]  # pylint: disable=line-too-long
+        if url := line["url"]:
+            url_status = line["url_status"]
+            threat = line["threat"]
+            tags = line["tags"]
+            urlhaus_link = line["urlhaus_link"]
+            source = line["reporter"]  # pylint: disable=line-too-long
 
-        context = {
-            "id_urlhaus": id_feed,
-            "status": url_status,
-            "source": self.name,
-            "report": urlhaus_link,
-            "threat": threat,
-            "reporter": source,
-            "first_seen": first_seen,
-        }
+            context = {
+                "id_urlhaus": id_feed,
+                "status": url_status,
+                "source": self.name,
+                "report": urlhaus_link,
+                "threat": threat,
+                "reporter": source,
+                "first_seen": first_seen,
+            }
 
-        if url:
             try:
                 url_obs = Url.get_or_create(value=url)
                 url_obs.tag(tags.split(","))

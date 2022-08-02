@@ -37,8 +37,8 @@ class ScheduleEntry(YetiDocument):
         self.save()
 
     @classmethod
-    def unlock_all(klass):
-        print(klass.objects(lock=True).modify(lock=False))
+    def unlock_all(cls):
+        print(cls.objects(lock=True).modify(lock=False))
 
 
 class OneShotEntry(YetiDocument):
@@ -67,9 +67,7 @@ class Scheduler(BaseScheduler):
         return self._schedule
 
     def load_entries(self):
-        is_tls = False
-        if yeti_config.mongodb.tls:
-            is_tls = True
+        is_tls = bool(yeti_config.mongodb.tls)
         connect(
             yeti_config.mongodb.database,
             host=yeti_config.mongodb.host,

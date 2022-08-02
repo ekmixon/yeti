@@ -110,8 +110,9 @@ class YetiFeedSender(object):
         try:
             # Try connecting to MongoDB for 10ms
             self.mongo_client = MongoClient(
-                "mongodb://{}:27017/".format(hostname), serverSelectionTimeoutMS=10
+                f"mongodb://{hostname}:27017/", serverSelectionTimeoutMS=10
             )
+
             self.mongo_client.server_info()
         except errors.ServerSelectionTimeoutError as mongo_conn_err:
             logger.exception(
@@ -143,29 +144,30 @@ class YetiFeedSender(object):
         """
 
         if username and password:
-            if use_ssl:
-                self.elastic_instance = Elasticsearch(
+            self.elastic_instance = (
+                Elasticsearch(
                     hosts=[{"host": hostname, "port": port}],
                     http_auth=(username, password),
                     use_ssl=use_ssl,
                     verify_certs=verify_certs,
                 )
-            else:
-                self.elastic_instance = Elasticsearch(
+                if use_ssl
+                else Elasticsearch(
                     hosts=[{"host": hostname, "port": port}],
                     http_auth=(username, password),
                 )
+            )
+
+        elif use_ssl:
+            self.elastic_instance = Elasticsearch(
+                hosts=[{"host": hostname, "port": port}],
+                use_ssl=use_ssl,
+                verify_certs=verify_certs,
+            )
         else:
-            if use_ssl:
-                self.elastic_instance = Elasticsearch(
-                    hosts=[{"host": hostname, "port": port}],
-                    use_ssl=use_ssl,
-                    verify_certs=verify_certs,
-                )
-            else:
-                self.elastic_instance = Elasticsearch(
-                    hosts=[{"host": hostname, "port": port}]
-                )
+            self.elastic_instance = Elasticsearch(
+                hosts=[{"host": hostname, "port": port}]
+            )
 
         # Check if there is a connection to elastic
         if not self.elastic_instance.ping():
@@ -181,9 +183,7 @@ class YetiFeedSender(object):
         :return: deserialized_json str
         """
 
-        formatted_dict = dict()
-        formatted_dict["@timestamp"] = datetime.now().isoformat()
-
+        formatted_dict = {"@timestamp": datetime.now().isoformat()}
         # Loop observable dictionary
         for key in observable.keys():
             if key == "_id":
@@ -192,9 +192,10 @@ class YetiFeedSender(object):
                 ].generation_time.isoformat()
             elif key == "parsed_url":
                 for parsed_url_key in observable[key].keys():
-                    formatted_dict["parsed_url.{}".format(parsed_url_key)] = observable[
+                    formatted_dict[f"parsed_url.{parsed_url_key}"] = observable[
                         key
                     ][parsed_url_key]
+
             elif key == "created":
                 formatted_dict["created"] = observable[key].isoformat()
             elif key == "_cls":
@@ -221,10 +222,9 @@ class YetiFeedSender(object):
                 # If we excluded all feeds, return an empty string
                 if not observable[key]:
                     logger.warning(
-                        "The value: {} from the date {} was not indexed".format(
-                            observable["value"], formatted_dict["created"]
-                        )
+                        f'The value: {observable["value"]} from the date {formatted_dict["created"]} was not indexed'
                     )
+
                     return ""
 
                 formatted_dict[key] = observable[key]
@@ -237,10 +237,7 @@ class YetiFeedSender(object):
 
                 formatted_dict[key] = observable[key]
 
-        # Format the dict to json. Supports mongodb structure representation
-        json_to_elastic = json_util.dumps(formatted_dict)
-
-        return json_to_elastic
+        return json_util.dumps(formatted_dict)
 
     def extract_and_send(self, elastic_index=None):
         """
@@ -294,22 +291,19 @@ class YetiFeedSender(object):
 
                     if response.get("result") == "created":
                         logger.info(
-                            "Created {} in index {} - Processed: {}".format(
-                                response.get("_id"), self.elastic_index, processed
-                            )
+                            f'Created {response.get("_id")} in index {self.elastic_index} - Processed: {processed}'
                         )
+
                     elif response.get("result") == "updated":
                         logger.info(
-                            "Updated {} in index {} - Processed: {}".format(
-                                response.get("_id"), self.elastic_index, processed
-                            )
+                            f'Updated {response.get("_id")} in index {self.elastic_index} - Processed: {processed}'
                         )
+
                     else:
                         logger.warning(
-                            "Failed to index {} in index {} - Processed: {}".format(
-                                response.get("_id"), self.elastic_index, processed
-                            )
+                            f'Failed to index {response.get("_id")} in index {self.elastic_index} - Processed: {processed}'
                         )
+
 
                 logger.info("Finished processing all events. Sleeping for 30 seconds.")
                 time.sleep(30)
@@ -317,9 +311,9 @@ class YetiFeedSender(object):
             except CursorNotFound:
                 logger.warning("Lost cursor. Retry with skip")
             except AutoReconnect as e:
-                logger.error("Connection Error: " + str(e))
+                logger.error(f"Connection Error: {str(e)}")
             except Exception as e:
-                logger.error("Unknown Error: {}".format(str(e)))
+                logger.error(f"Unknown Error: {str(e)}")
 
 
 def main():

@@ -28,28 +28,30 @@ class CybercrimeAtmosTracker(Feed):
         ):
 
             pub_date = parse_date_to_utc(item["pubDate"])
-            if self.last_run is not None:
-                if since_last_run > pub_date:
-                    continue
+            if self.last_run is not None and since_last_run > pub_date:
+                continue
 
             self.analyze(item, pub_date)
 
     def analyze(self, item, pub_date):  # pylint: disable=arguments-differ
         observable_sample = item["title"]
-        context_sample = {}
+        context_sample = {
+            "description": "Atmos sample",
+            "date_added": pub_date,
+            "source": self.name,
+        }
 
-        context_sample["description"] = "Atmos sample"
-        context_sample["date_added"] = pub_date
-        context_sample["source"] = self.name
 
         link_c2 = re.search(
             "<a href[^>]+>(?P<url>[^<]+)", item["description"].lower()
-        ).group("url")
+        )["url"]
+
         observable_c2 = link_c2
-        context_c2 = {}
-        context_c2["description"] = "Atmos c2"
-        context_c2["date_added"] = pub_date
-        context_c2["source"] = self.name
+        context_c2 = {
+            "description": "Atmos c2",
+            "date_added": pub_date,
+            "source": self.name,
+        }
 
         try:
             sample = Hash.get_or_create(value=observable_sample)

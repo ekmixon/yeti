@@ -46,7 +46,7 @@ class TagLogic(ScheduledAnalytics):
     @staticmethod
     def each(obj):
 
-        all_tags = set([t.name for t in obj.tags])
+        all_tags = {t.name for t in obj.tags}
 
         # tag absent produced tags
         for tag in all_tags:
@@ -55,6 +55,4 @@ class TagLogic(ScheduledAnalytics):
                 produced_tags = db_tag.produces
                 obj.tag([t.name for t in produced_tags if t.name not in all_tags])
             except DoesNotExist:
-                logging.error(
-                    "Nonexisting tag: {} (found in {})".format(tag, obj.value)
-                )
+                logging.error(f"Nonexisting tag: {tag} (found in {obj.value})")

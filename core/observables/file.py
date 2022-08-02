@@ -19,8 +19,8 @@ class File(Observable):
     exclude_fields = Observable.exclude_fields + ["hashes", "body"]
 
     @classmethod
-    def get_form(klass):
-        form = model_form(klass, exclude=klass.exclude_fields)
+    def get_form(cls):
+        form = model_form(cls, exclude=cls.exclude_fields)
         form.filenames = StringListField("Filenames")
         return form
 

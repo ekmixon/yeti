@@ -56,4 +56,4 @@ class ImportURL(ImportMethod):
                 method = ImportMethod.objects.get(acts_on=content_type)
                 method.do_import(results, target.filepath)
             except:
-                raise ValueError("unsupported file type: '{}'".format(content_type))
+                raise ValueError(f"unsupported file type: '{content_type}'")

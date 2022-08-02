@@ -42,8 +42,6 @@ class VirusTotalPriv(Feed):
             logging.error("Your VT API key is not set in the config file!")
 
     def analyze(self, item):
-        tags = []
-
         context = {"source": self.name}
 
         # Parse value of interest
@@ -55,11 +53,10 @@ class VirusTotalPriv(Feed):
         tags2.remove(sha2)
 
         # Update to Yeti DB
-        f_vt3 = File.get_or_create(value="FILE:{}".format(sha2))
+        f_vt3 = File.get_or_create(value=f"FILE:{sha2}")
         sha256 = Hash.get_or_create(value=sha2)
         f_vt3.active_link_to(sha256, "sha256", self.name)
-        tags.append(tags2)
-        tags.append(subject)
+        tags = [tags2, subject]
         context["date_added"] = date_string
         context["snippet"] = item["attributes"]["snippet"]
         # context['source_country'] = item["attributes"]['source_country']

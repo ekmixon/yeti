@@ -17,16 +17,16 @@ def login():
     if request.method == "GET":
         return render_template("login.html")
 
+    if u := authenticate(
+        request.form.get("login"), request.form.get("password")
+    ):
+        login_user(u)
+        print("User logged in (web):")
+        redir = request.args.get("next", "/")
+        return redirect(redir)
     else:
-        u = authenticate(request.form.get("login"), request.form.get("password"))
-        if u:
-            login_user(u)
-            print("User logged in (web):")
-            redir = request.args.get("next", "/")
-            return redirect(redir)
-        else:
-            flash("Invalid credentials", "danger")
-            return render_template("login.html")
+        flash("Invalid credentials", "danger")
+        return render_template("login.html")
 
 
 @auth.route("/logout")
@@ -45,8 +45,6 @@ def new_user():
     if current_user.has_role("admin") and current_user.is_active:
         create_user(username, password, admin=admin)
     return redirect(request.referrer)
-
-    logout_user()
 
 
 @auth.route("/creategroup", methods=["POST"])
@@ -69,10 +67,11 @@ def change_password():
     new = request.form.get("new", "")
     bis = request.form.get("bis", "")
 
-    if not current_user.has_role("admin"):
-        if not check_password_hash(u.password, current):
-            flash("Current password is invalid", "danger")
-            return redirect(request.referrer)
+    if not current_user.has_role("admin") and not check_password_hash(
+        u.password, current
+    ):
+        flash("Current password is invalid", "danger")
+        return redirect(request.referrer)
 
     if new != bis:
         flash("Password confirmation differs from new password.", "danger")

@@ -60,18 +60,7 @@ class ThreatTracking(Feed):
             "threattracking", "sheet_key"
         )
         self.api = hammock.Hammock(base, params=params)
-        if False:
-            r = self.api.GET()
-            if r.status_code != 200:
-                raise requests.ConnectionError(
-                    "Return code for {query} is {code}".format(
-                        query=r.request.url, code=r.status_code
-                    )
-                )
-            sheets = r.json()["sheets"]
-            json.dump(sheets, open("actor.sheets.json", "w"))
-        else:
-            sheets = json.load(open("actor.sheets.json", "r"))
+        sheets = json.load(open("actor.sheets.json", "r"))
         # print(pprint.pformat(sheets))
         for s_p in sheets:
             s = s_p["properties"]
@@ -149,7 +138,7 @@ class ThreatTracking(Feed):
         _ = self.api.values.GET(campaign_value_range).json()
         campaign_names = _["values"]
         r_names = []
-        for i, campaigns in enumerate(campaign_names):
+        for campaigns in campaign_names:
             while u"" in campaigns:
                 campaigns.remove(u"")
             campaigns = list(set(campaigns))
@@ -164,7 +153,7 @@ class ThreatTracking(Feed):
         _ = self.api.values.GET(tool_value_range).json()
         tools_names = _["values"]
         r_names = []
-        for i, tools in enumerate(tools_names):
+        for tools in tools_names:
             if len(tools) > 0:
                 tools = tools[0].split(",")
                 tools = [t.strip() for t in tools]
@@ -190,7 +179,7 @@ class ThreatTracking(Feed):
                 try:
                     _campaign = Campaign.get_or_create(name=c)
                 except DoesNotExist:
-                    _campaign = Campaign.get_or_create(name="CAMPAIGN-" + c)
+                    _campaign = Campaign.get_or_create(name=f"CAMPAIGN-{c}")
                 _actor.action(_campaign, self.name)
             # create the tools
             for mal in tools:
@@ -198,7 +187,7 @@ class ThreatTracking(Feed):
                 try:
                     _mal = Malware.get_or_create(name=mal)
                 except DoesNotExist:
-                    _mal = Malware.get_or_create(name="MALWARE-" + mal)
+                    _mal = Malware.get_or_create(name=f"MALWARE-{mal}")
                 _actor.action(_mal, self.name)
         return
 

@@ -49,10 +49,9 @@ class Tag(Node):
         self.name = re.sub(" ", "_", self.name)
         if not self.name:
             raise TagValidationError(
-                "{} is not a valid tag. Valid chars = [a-z0-9\\-_]".format(
-                    repr(self.name)
-                )
+                f"{repr(self.name)} is not a valid tag. Valid chars = [a-z0-9\\-_]"
             )
+
         self.produces = list(set(self.produces))
 
 
@@ -65,12 +64,11 @@ class ObservableTag(EmbeddedDocument):
     fresh = BooleanField(default=True)
 
     def __unicode__(self):
-        return "{}".format(self.name)
+        return f"{self.name}"
 
     def info(self):
-        i = {
+        return {
             k: v
             for k, v in self._data.items()
             if k in ["first_seen", "last_seen", "fresh", "name"]
         }
-        return i

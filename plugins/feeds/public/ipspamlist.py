@@ -38,4 +38,4 @@ class IPSpamList(Feed):
             ip_obs.add_source(self.name)
             ip_obs.add_context(context)
         except ObservableValidationError as e:
-            logging.error("Error in IP format %s %s" % (ip_address, e))
+            logging.error(f"Error in IP format {ip_address} {e}")

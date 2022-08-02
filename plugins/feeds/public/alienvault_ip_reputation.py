@@ -58,6 +58,6 @@ class AlienVaultIPReputation(Feed):
             ip.add_context(context)
 
         except Exception as e:
-            logging.error("Error to process the item %s %s" % (item, e))
+            logging.error(f"Error to process the item {item} {e}")
             return False
         return True

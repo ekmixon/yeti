@@ -27,7 +27,7 @@ def before_request():
     g.entities = []
     g.observables = []
     g.indicators = []
-    for key, value in globals().items():
+    for value in globals().values():
         try:
             if issubclass(value, Entity) and value is not Entity:
                 g.entities.append(value)

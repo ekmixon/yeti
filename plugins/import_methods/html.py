@@ -28,8 +28,6 @@ class ImportHTML(ImportMethod):
     }
 
     def do_import(self, results, filepath):
-        html_file = open(filepath, "r")
-        html = html_file.read()
-        html_file.close()
-
+        with open(filepath, "r") as html_file:
+            html = html_file.read()
         import_html(results, html)

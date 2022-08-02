@@ -39,10 +39,7 @@ class Certificate(Observable):
             "cert.der",
             "application/pkix-cert",
         )
-        return cls.get_or_create(
-            value="CERT:{}".format(hash_sha256),
-            body=body,
-        )
+        return cls.get_or_create(value=f"CERT:{hash_sha256}", body=body)
 
 
 class CertificateSubject(Observable):

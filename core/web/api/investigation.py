@@ -80,15 +80,13 @@ class Investigation(CrudApi):
     def nodesearch(self, query):
         result = []
 
-        query = re.compile("^{}".format(query), re.IGNORECASE)
+        query = re.compile(f"^{query}", re.IGNORECASE)
 
         observables = Observable.objects(value=query).limit(5)
         entities = Entity.objects(name=query).limit(5)
 
         for results in [observables, entities]:
-            for node in results:
-                result.append(node.to_mongo())
-
+            result.extend(node.to_mongo() for node in results)
         return render(result)
 
     @route("/import_results/<string:id>")

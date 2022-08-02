@@ -7,7 +7,7 @@ from core.config.config import yeti_config
 tzinfos = {"CEST": gettz("Europe/Amsterdam"), "CST": gettz("Europe/Amsterdam")}
 
 
-tld_extract_dict = {"extra_suffixes": list(), "suffix_list_urls": None}
+tld_extract_dict = {"extra_suffixes": [], "suffix_list_urls": None}
 
 if hasattr(yeti_config, "tldextract"):
     if yeti_config.tldextract.extra_suffixes:

@@ -15,7 +15,7 @@ from core.observables import Observable
 def each(module_name, observable_json):
     o = Observable.from_json(observable_json)
     mod = ScheduledAnalytics.objects.get(name=module_name)
-    logging.debug("Launching {} on {}".format(mod.name, o))
+    logging.debug(f"Launching {mod.name} on {o}")
     mod.each(o)
     o.analysis_done(mod.name)
 
@@ -43,18 +43,18 @@ def schedule(id):
             return
 
     if a.enabled:  # check if Analytics is enabled
-        logging.debug("Running analytics {}".format(a.name))
+        logging.debug(f"Running analytics {a.name}")
         a.update_status("Running...")
         try:
             a.analyze_outdated()
             a.last_run = datetime.utcnow()
             a.update_status("OK")
         except Exception as e:
-            logging.error("Error running Analytics {}: {}".format(a.name, e))
+            logging.error(f"Error running Analytics {a.name}: {e}")
             a.update_status("ERROR")
 
     else:
-        logging.debug("Analytics {} is disabled".format(a.name))
+        logging.debug(f"Analytics {a.name} is disabled")
 
     if a.lock:  # release lock if it was set
         a.lock = False
@@ -66,10 +66,9 @@ def single(results_id):
     results = AnalyticsResults.objects.get(id=results_id)
     analytics = results.analytics
     logging.debug(
-        "Running one-shot query {} on {}".format(
-            analytics.__class__.__name__, results.observable
-        )
+        f"Running one-shot query {analytics.__class__.__name__} on {results.observable}"
     )
+
     results.update(status="running")
     try:
         links = analytics.analyze(results.observable, results)

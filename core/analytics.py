@@ -58,14 +58,13 @@ class InlineAnalytics(YetiDocument):
 
     @classmethod
     def post_save(cls, sender, document, created):
-        if issubclass(sender, Observable):
-            if getattr(document, "new", False):
-                for analytics in cls.analytics.values():
-                    if analytics.enabled and sender.__name__ in iterify(
-                        analytics.ACTS_ON
-                    ):
-                        document.new = False
-                        analytics.each(document)
+        if issubclass(sender, Observable) and getattr(document, "new", False):
+            for analytics in cls.analytics.values():
+                if analytics.enabled and sender.__name__ in iterify(
+                    analytics.ACTS_ON
+                ):
+                    document.new = False
+                    analytics.each(document)
 
 
 signals.post_save.connect(InlineAnalytics.post_save)
@@ -80,17 +79,18 @@ class ScheduledAnalytics(ScheduleEntry):
     def analyze_outdated(self):
         class_filter = Q()
         for acts_on in iterify(self.ACTS_ON):
-            class_filter |= Q(_cls="Observable.{}".format(acts_on))
+            class_filter |= Q(_cls=f"Observable.{acts_on}")
 
         # do outdated logic
-        fltr = Q(**{"last_analyses__{}__exists".format(self.name): False})
+        fltr = Q(**{f"last_analyses__{self.name}__exists": False})
         if self.EXPIRATION:
             fltr |= Q(
                 **{
-                    "last_analyses__{}__lte".format(self.name): datetime.utcnow()
+                    f"last_analyses__{self.name}__lte": datetime.utcnow()
                     - self.EXPIRATION
                 }
             )
+
         fltr &= self.CUSTOM_FILTER & class_filter
         self.bulk(Observable.objects(fltr).no_cache())
 

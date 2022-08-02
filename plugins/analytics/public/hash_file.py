@@ -30,10 +30,11 @@ class HashFile(InlineAnalytics):
                 hash_object.save()
                 f.active_link_to(
                     hash_object,
-                    "{} hash".format(hash_type.upper()),
+                    f"{hash_type.upper()} hash",
                     "HashFile",
                     clean_old=False,
                 )
+
                 f.hashes.append({"hash": hash_type, "value": h.hexdigest()})
             f.save()
 

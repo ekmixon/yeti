@@ -124,22 +124,24 @@ class PassiveTotalPassiveDNS(OneShotAnalytics, PassiveTotalApi):
                 links.update(
                     observable.link_to(
                         new,
-                        "{} record".format(record["recordType"]),
+                        f'{record["recordType"]} record',
                         "PassiveTotal",
                         first_seen,
                         last_seen,
                     )
                 )
+
             else:
                 links.update(
                     new.link_to(
                         observable,
-                        "{} record".format(record["recordType"]),
+                        f'{record["recordType"]} record',
                         "PassiveTotal",
                         first_seen,
                         last_seen,
                     )
                 )
+
 
         return list(links)
 
@@ -189,14 +191,12 @@ class PassiveTotalSubdomains(OneShotAnalytics, PassiveTotalApi):
     def analyze(observable, results):
         links = set()
 
-        params = {"query": "*.{}".format(observable.value)}
+        params = {"query": f"*.{observable.value}"}
 
         data = PassiveTotalApi.get("/enrichment/subdomains", results.settings, params)
 
         for record in data["subdomains"]:
-            subdomain = Hostname.get_or_create(
-                value="{}.{}".format(record, observable.value)
-            )
+            subdomain = Hostname.get_or_create(value=f"{record}.{observable.value}")
             links.update(
                 observable.active_link_to(subdomain, "Subdomain", "PassiveTotal")
             )

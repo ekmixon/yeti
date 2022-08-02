@@ -20,9 +20,7 @@ class ThreatFox(Feed):
             self.analyze(line)
 
     def update_json(self):
-        r = self._make_request(sort=False)
-
-        if r:
+        if r := self._make_request(sort=False):
             res = r.json()
 
             values = [r[0] for r in res.values()]
@@ -49,18 +47,12 @@ class ThreatFox(Feed):
         reporter = item["reporter"]
         tags = []
 
-        context = {"source": self.name}
-        context["first_seen"] = first_seen
-
-        if reference:
-            context["reference"] = reference
-        else:
-            context["reference"] = "Unknown"
-
-        if reporter:
-            context["reporter"] = reporter
-        else:
-            context["reporter"] = "Unknown"
+        context = {
+            "source": self.name,
+            "first_seen": first_seen,
+            "reference": reference or "Unknown",
+            "reporter": reporter or "Unknown",
+        }
 
         if threat_type:
             context["threat_type"] = threat_type

@@ -14,10 +14,7 @@ from core.user import User
 
 def recursive_encoder(objects, template=None, ctx=None):
     if isinstance(objects, dict):
-        newdict = {}
-        for (key, value) in objects.items():
-            newdict[key] = recursive_encoder(value)
-        return newdict
+        return {key: recursive_encoder(value) for key, value in objects.items()}
 
     elif isinstance(objects, (list, QuerySet, set)):
         return [recursive_encoder(o) for o in objects]
@@ -29,10 +26,7 @@ def recursive_encoder(objects, template=None, ctx=None):
         return to_json(objects)
 
     elif isinstance(objects, (Node, Link, YetiDocument, Document, EmbeddedDocument)):
-        if hasattr(objects, "info"):
-            data = objects.info()
-        else:
-            data = objects.to_mongo()
+        data = objects.info() if hasattr(objects, "info") else objects.to_mongo()
         return recursive_encoder(data)
 
     else:

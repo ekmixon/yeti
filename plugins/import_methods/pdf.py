@@ -18,24 +18,19 @@ class ImportPDF(ImportMethod):
 
     def do_import(self, results, filepath):
         buff = StringIO()
-        fp = open(filepath, "rb")
+        with open(filepath, "rb") as fp:
+            laparams = LAParams()
+            laparams.all_texts = True
+            rsrcmgr = PDFResourceManager()
+            pagenos = set()
 
-        laparams = LAParams()
-        laparams.all_texts = True
-        rsrcmgr = PDFResourceManager()
-        pagenos = set()
+            for page in PDFPage.get_pages(fp, pagenos, check_extractable=True):
+                device = TextConverter(rsrcmgr, buff, codec="utf-8", laparams=laparams)
+                interpreter = PDFPageInterpreter(rsrcmgr, device)
+                interpreter.process_page(page)
 
-        page_num = 0
-        for page in PDFPage.get_pages(fp, pagenos, check_extractable=True):
-            page_num += 1
+                buff.write("\n")
 
-            device = TextConverter(rsrcmgr, buff, codec="utf-8", laparams=laparams)
-            interpreter = PDFPageInterpreter(rsrcmgr, device)
-            interpreter.process_page(page)
+            results.investigation.update(import_text=buff.getvalue())
 
-            buff.write("\n")
-
-        results.investigation.update(import_text=buff.getvalue())
-
-        fp.close()
         buff.close()

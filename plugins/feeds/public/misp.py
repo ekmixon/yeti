@@ -53,7 +53,7 @@ class MispFeed(Feed):
                 config["key"] = yeti_config.get(instance, "key")
                 self.instances[instance] = config
             except Exception as e:
-                logging.error("Error Misp connection %s" % e)
+                logging.error(f"Error Misp connection {e}")
 
     def last_run_for(self, instance):
         last_run = [int(part) for part in self.last_runs[instance].split("-")]
@@ -76,7 +76,7 @@ class MispFeed(Feed):
                 org_name = org["Organisation"]["name"]
                 self.instances[instance]["organisations"][org_id] = org_name
         except Exception as e:
-            logging.error("error http %s to get instances" % e)
+            logging.error(f"error http {e} to get instances")
 
     def get_all_events(self, instance):
         days = None
@@ -114,31 +114,25 @@ class MispFeed(Feed):
 
     def update(self):
         for instance in self.instances:
-            logging.debug("Processing instance {}".format(instance))
+            logging.debug(f"Processing instance {instance}")
             self.get_organisations(instance)
             if instance in self.last_runs:
                 self.get_last_events(instance)
             else:
                 self.get_all_events(instance)
 
-            self.modify(
-                **{"set__last_runs__{}".format(instance): date.today().isoformat()}
-            )
+            self.modify(**{f"set__last_runs__{instance}": date.today().isoformat()})
 
     def analyze(self, event, instance):
         tags = []
-        galaxies_to_context = []
-
-        context = {}
-        context["source"] = self.instances[instance]["name"]
-        external_analysis = [
+        context = {"source": self.instances[instance]["name"]}
+        if external_analysis := [
             attr["value"]
             for attr in event["Attribute"]
             if attr["category"] == "External analysis"
             and attr["type"] == "url"
             and attr["to_ids"]
-        ]
-        if external_analysis:
+        ]:
             context["external sources"] = "\r\n".join(external_analysis)
         if "Tag" in event:
             if not self.instances[instance].get("galaxy_filter"):
@@ -146,14 +140,12 @@ class MispFeed(Feed):
             else:
                 galaxies = self.instances[instance]["galaxy_filter"].split(",")
 
+                galaxies_to_context = []
+
                 for tag in event["Tag"]:
-                    found = False
                     if "misp-galaxy" in tag["name"]:
                         galaxies_to_context.append(tag["name"])
-                    for g in galaxies:
-                        if g in tag["name"]:
-                            found = True
-                            break
+                    found = any(g in tag["name"] for g in galaxies)
                     if not found:
                         tags.append(tag["name"])
 
@@ -173,9 +165,9 @@ class MispFeed(Feed):
 
             context["id"] = attribute["event_id"]
             context["link"] = urljoin(
-                self.instances[instance]["url"],
-                "/events/{}".format(attribute["event_id"]),
+                self.instances[instance]["url"], f'/events/{attribute["event_id"]}'
             )
+
 
             context["comment"] = attribute["comment"]
 

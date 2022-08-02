@@ -56,4 +56,4 @@ class SSLBlackListCerts(Feed):
             sha1.tag(tags)
             sha1.add_context(context_hash)
         except ObservableValidationError as e:
-            logging.error("Invalid line: {}\nLine: {}".format(e, line))
+            logging.error(f"Invalid line: {e}\nLine: {line}")

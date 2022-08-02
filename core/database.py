@@ -17,16 +17,10 @@ class StringListField(Field):
     widget = widgets.TextInput()
 
     def _value(self):
-        if self.data:
-            return ",".join([str(d) for d in self.data])
-        else:
-            return ""
+        return ",".join([str(d) for d in self.data]) if self.data else ""
 
     def process_formdata(self, valuelist):
-        if valuelist:
-            self.data = [x.strip() for x in valuelist[0].split(",")]
-        else:
-            self.data = []
+        self.data = [x.strip() for x in valuelist[0].split(",")] if valuelist else []
 
 
 class TagListField(StringListField):
@@ -48,10 +42,7 @@ class YetiDocument(Document):
 
         self.validate()
 
-        update_dict = {}
-        for key, value in kwargs.items():
-            update_dict[key] = getattr(self, key, value)
-
+        update_dict = {key: getattr(self, key, value) for key, value in kwargs.items()}
         self.update(**update_dict)
         self.reload()
         return self
@@ -81,7 +72,7 @@ class YetiDocument(Document):
             select_dict = {"name": obj.name}
             kwargs.pop("name")
         select_dict.update(kwargs)
-        update_dict = {"set__" + k: v for k, v in select_dict.items()}
+        update_dict = {f"set__{k}": v for k, v in select_dict.items()}
         r = cls.objects(**select_dict).modify(upsert=True, **update_dict)
         if r is None:
             obj.id = cls.objects.get(**select_dict).id
@@ -110,41 +101,31 @@ class Link(Document):
     meta = {"indexes": ["src", "dst"]}
 
     def __unicode__(self):
-        return "{} -> {} ({})".format(self.src, self.dst, self.description)
+        return f"{self.src} -> {self.dst} ({self.description})"
 
     @property
     def active(self):
-        last_history = self._get_last_history()
-
-        if last_history:
+        if last_history := self._get_last_history():
             return last_history.active
 
     @property
     def description(self):
-        last_history = self._get_last_history()
-
-        if last_history:
+        if last_history := self._get_last_history():
             return last_history.description
 
     @description.setter
     def description(self, value):
-        last_history = self._get_last_history()
-
-        if last_history:
+        if last_history := self._get_last_history():
             last_history.description = value
 
     @property
     def last_seen(self):
-        last_history = self._get_last_history()
-
-        if last_history:
+        if last_history := self._get_last_history():
             return last_history.last_seen
 
     @property
     def first_seen(self):
-        last_history = self._get_last_history()
-
-        if last_history:
+        if last_history := self._get_last_history():
             return last_history.first_seen
 
     @staticmethod
@@ -215,22 +196,34 @@ class Link(Document):
         )
 
     def get_active(self, description):
-        for item in self.history:
-            if item.active and description == item.description:
-                return item
-
-        return None
+        return next(
+            (
+                item
+                for item in self.history
+                if item.active and description == item.description
+            ),
+            None,
+        )
 
     def _get_overlapping(self, description, first_seen, last_seen):
-        for index, item in enumerate(self.history):
-            if description == item.description and (
-                (item.first_seen <= first_seen <= item.last_seen)
-                or (item.first_seen <= last_seen <= item.last_seen)
-                or (first_seen <= item.first_seen <= item.last_seen <= last_seen)
-            ):
-                return index, item
-
-        return None, None
+        return next(
+            (
+                (index, item)
+                for index, item in enumerate(self.history)
+                if description == item.description
+                and (
+                    (item.first_seen <= first_seen <= item.last_seen)
+                    or (item.first_seen <= last_seen <= item.last_seen)
+                    or (
+                        first_seen
+                        <= item.first_seen
+                        <= item.last_seen
+                        <= last_seen
+                    )
+                )
+            ),
+            (None, None),
+        )
 
     def _get_last_history(self):
         last_history = None
@@ -261,9 +254,8 @@ class AttachedFile(YetiDocument):
             except:
                 pass
 
-            fd = open(os.path.join(STORAGE_ROOT, sha256), "wb")
-            fd.write(content.read())
-            fd.close()
+            with open(os.path.join(STORAGE_ROOT, sha256), "wb") as fd:
+                fd.write(content.read())
             if filename:
                 f = AttachedFile(
                     filename=filename, content_type=content_type, sha256=sha256
@@ -306,19 +298,17 @@ class AttachedFile(YetiDocument):
         """
         fd = self.contents
         while True:
-            data = fd.read(1024 * 1024)
-            if not data:
-                return
-            else:
+            if data := fd.read(1024 * 1024):
                 yield data
+            else:
+                return
 
     def info(self):
-        i = {
+        return {
             k: v
             for k, v in self._data.items()
             if k in ["filename", "sha256", "content_type"]
         }
-        return i
 
     def attach(self, obj):
         obj.attached_files.append(self)
@@ -343,9 +333,8 @@ class Node(YetiDocument):
     }
 
     @classmethod
-    def get_form(klass):
-        form = model_form(klass, exclude=klass.exclude_fields)
-        return form
+    def get_form(cls):
+        return model_form(cls, exclude=cls.exclude_fields)
 
     @property
     def type(self):
@@ -364,15 +353,20 @@ class Node(YetiDocument):
             yield (l, l.dst)
 
     def neighbors(self, neighbor_type=""):
-        links = []
-        for l in Link.objects(
-            __raw__={"dst.$id": self.id, "src.cls": re.compile(neighbor_type)}
-        ):
-            links.append((l, l.src))
-        for l in Link.objects(
-            __raw__={"src.$id": self.id, "dst.cls": re.compile(neighbor_type)}
-        ):
-            links.append((l, l.dst))
+        links = [
+            (l, l.src)
+            for l in Link.objects(
+                __raw__={"dst.$id": self.id, "src.cls": re.compile(neighbor_type)}
+            )
+        ]
+
+        links.extend(
+            (l, l.dst)
+            for l in Link.objects(
+                __raw__={"src.$id": self.id, "dst.cls": re.compile(neighbor_type)}
+            )
+        )
+
         info = {}
         for link, node in links:
             info[node.full_type] = info.get(node.full_type, []) + [(link, node)]
@@ -381,7 +375,7 @@ class Node(YetiDocument):
     def _neighbors_aggregation(self, way, klass, result_filters, skip, limit):
         if way == "in":
             e1, e2 = "dst", "src"
-        if way == "out":
+        elif way == "out":
             e1, e2 = "src", "dst"
         collection_name = klass._get_collection().name
         compiled_filter = re.compile(klass._class_name)
@@ -389,19 +383,14 @@ class Node(YetiDocument):
         match = {"$match": result_filters}
 
         pipeline = [
-            {
-                "$match": {
-                    "{}.$id".format(e1): self.id,
-                    "{}.$ref".format(e2): collection_name,
-                }
-            },
+            {"$match": {f"{e1}.$id": self.id, f"{e2}.$ref": collection_name}},
             {
                 "$project": {
                     "_id": True,
                     "src": True,
                     "dst": True,
                     "history": True,
-                    "oid": {"$arrayElemAt": [{"$objectToArray": "${}".format(e2)}, 1]},
+                    "oid": {"$arrayElemAt": [{"$objectToArray": f"${e2}"}, 1]},
                 }
             },
             {
@@ -423,13 +412,13 @@ class Node(YetiDocument):
             },
             {"$unwind": "$related"},
             {"$match": {"related._cls": compiled_filter}},
+            *[match, {"$skip": skip * limit}, {"$limit": limit}],
         ]
-        pipeline.extend([match, {"$skip": skip * limit}, {"$limit": limit}])
-        results = list(Link.objects.aggregate(*pipeline))
-        return results
+
+        return list(Link.objects.aggregate(*pipeline))
 
     def neighbors_advanced(self, klass, filters, regex, ignorecase, page, rng):
-        result_filters = dict()
+        result_filters = {}
 
         search_replace = {
             "tags": "tags.name",
@@ -445,7 +434,7 @@ class Node(YetiDocument):
                     value["$options"] = "i"
             if isinstance(value, list) and not key.endswith("__in"):
                 value = {"$in": value}
-            result_filters["related." + key] = value
+            result_filters[f"related.{key}"] = value
 
         outnodes = self._neighbors_aggregation("out", klass, result_filters, page, rng)
         innodes = self._neighbors_aggregation("in", klass, result_filters, page, rng)
@@ -496,8 +485,7 @@ class Node(YetiDocument):
             if clean_old:
                 for link, node in self.outgoing():
                     if node not in nodes:
-                        active_link = link.get_active(description)
-                        if active_link:
+                        if active_link := link.get_active(description):
                             active_link.active = False
                             link.save(validate=False)
 
@@ -513,6 +501,4 @@ class Node(YetiDocument):
             if subcls.__name__ == subclass_name:
                 return subcls
 
-        raise GenericYetiError(
-            "{} is not a subclass of {}".format(subclass_name, cls.__name__)
-        )
+        raise GenericYetiError(f"{subclass_name} is not a subclass of {cls.__name__}")

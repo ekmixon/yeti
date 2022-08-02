@@ -35,11 +35,13 @@ class RulezSKBruteforceBlocker(Feed):
                 self.analyze(row)
 
     def analyze(self, row):
-        context = {}
-        context["first_seen"] = row["last_report"]
-        context["source"] = self.name
-        context["count"] = row["count"]
-        context["id"] = row["id"]
+        context = {
+            "first_seen": row["last_report"],
+            "source": self.name,
+            "count": row["count"],
+            "id": row["id"],
+        }
+
         ip = row["ip"]
         try:
             ip = Ip.get_or_create(value=ip)

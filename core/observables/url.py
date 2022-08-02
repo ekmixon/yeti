@@ -49,11 +49,11 @@ class Url(Observable):
 
         if re.match(r"[^:]+://", self.value) is None:
             # if no schema is specified, assume http://
-            self.value = "http://{}".format(self.value)
+            self.value = f"http://{self.value}"
         try:
             self.value = url_normalize(self.value).replace(" ", "%20")
         except Exception:
-            raise ObservableValidationError("Invalid URL: {}".format(self.value))
+            raise ObservableValidationError(f"Invalid URL: {self.value}")
 
         try:
             p = tldextract_parser(self.value)
@@ -61,7 +61,7 @@ class Url(Observable):
             self.parse()
         except UnicodeDecodeError:
             raise ObservableValidationError(
-                "Invalid URL (UTF-8 decode error): {}".format(self.value)
+                f"Invalid URL (UTF-8 decode error): {self.value}"
             )
 
     def parse(self):
@@ -70,7 +70,7 @@ class Url(Observable):
         self.parsed_url = {
             "scheme": parsed.scheme,
             "netloc": parsed.netloc.split(":")[0],
-            "port": parsed.port if parsed.port else "80",
+            "port": parsed.port or "80",
             "path": parsed.path,
             "params": parsed.params,
             "query": parsed.query,

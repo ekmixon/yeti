@@ -56,7 +56,7 @@ class ActionsView(FlaskView):
     def export(self):
         template = get_object_or_404(ExportTemplate, id=request.form["template"])
 
-        filepath = path.join(gettempdir(), "yeti_{}.txt".format(uuid4()))
+        filepath = path.join(gettempdir(), f"yeti_{uuid4()}.txt")
         template.render(self._get_selected_observables(request.form), filepath)
 
         return send_file(filepath, as_attachment=True)

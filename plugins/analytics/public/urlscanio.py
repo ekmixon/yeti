@@ -57,7 +57,7 @@ class UrlScanIoApi(object):
                         new_ip.active_link_to(observable, "ip", "UrlScanIo Query")
                     )
                 except ObservableValidationError:
-                    logging.error("This ip address is not valid %s" % ip)
+                    logging.error(f"This ip address is not valid {ip}")
 
             if not isinstance(observable, Hostname) and page["page"].get("domain"):
                 try:
@@ -70,7 +70,7 @@ class UrlScanIoApi(object):
                         )
                     )
                 except ObservableValidationError:
-                    logging.error("This hostname not valid: %s" % hostname)
+                    logging.error(f"This hostname not valid: {hostname}")
 
             if not isinstance(observable, Url) and page["page"].get("url"):
                 try:
@@ -81,7 +81,7 @@ class UrlScanIoApi(object):
                         new_url.active_link_to(observable, "url", "UrlScanIo Query")
                     )
                 except ObservableValidationError:
-                    logging.error("This url is not valid %s" % url)
+                    logging.error(f"This url is not valid {url}")
 
             links.update(UrlScanIoApi._process_asn_data(page, observable))
 
@@ -108,9 +108,7 @@ class UrlScanIoApi(object):
 
             return None
         except Exception as e:
-            raise GenericYetiError(
-                "Hit an error checking {},{}".format(observable.value, e)
-            )
+            raise GenericYetiError(f"Hit an error checking {observable.value},{e}")
 
 
 class UrlScanIoQuery(OneShotAnalytics, UrlScanIoApi):
@@ -122,7 +120,7 @@ class UrlScanIoQuery(OneShotAnalytics, UrlScanIoApi):
     ACTS_ON = ["Ip", "Hostname", "Hash"]
 
     def analyze(self, observable, results):
-        links = list()
+        links = []
         json_result = UrlScanIoApi.fetch(observable)
 
         if json_result is not None:

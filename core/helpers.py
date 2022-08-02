@@ -65,8 +65,7 @@ def stream_sha256(stream):
     sha256 = hashlib.sha256()
 
     while True:
-        data = stream.read(4096)
-        if data:
+        if data := stream.read(4096):
             sha256.update(data)
         else:
             stream.seek(0, 0)

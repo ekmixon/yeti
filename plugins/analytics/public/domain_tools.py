@@ -65,9 +65,8 @@ class DomainToolsApi(object):
     @staticmethod
     def get(uri, settings, params={}):
         timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        _params = "{}{}/v1{}".format(
-            settings["domaintools_api_username"].encode("ascii"), timestamp, uri
-        )
+        _params = f'{settings["domaintools_api_username"].encode("ascii")}{timestamp}/v1{uri}'
+
         signature = hmac.new(
             settings["domaintools_api_key"].encode("ascii"),
             _params,
@@ -106,8 +105,9 @@ class DTReverseIP(OneShotAnalytics, DomainToolsApi):
         links = set()
 
         data = DomainToolsApi.get(
-            "/{}/host-domains/".format(observable.value), results.settings
+            f"/{observable.value}/host-domains/", results.settings
         )
+
         results.update(raw=json.dumps(data, indent=2))
 
         for record in data["response"]["ip_addresses"]["domain_names"]:
@@ -132,8 +132,9 @@ class DTReverseNS(OneShotAnalytics, DomainToolsApi):
         links = set()
 
         data = DomainToolsApi.get(
-            "/{}/name-server-domains".format(observable.value), results.settings
+            f"/{observable.value}/name-server-domains", results.settings
         )
+
         results.update(raw=json.dumps(data, indent=2))
 
         for record in (
@@ -162,8 +163,9 @@ class DTWhoisHistory(OneShotAnalytics, DomainToolsApi):
 
         if parts.subdomain == "":
             data = DomainToolsApi.get(
-                "/{}/whois/history".format(observable.value), results.settings
+                f"/{observable.value}/whois/history", results.settings
             )
+
             results.update(raw=json.dumps(data, indent=2))
 
             for record in data["response"]["history"]:
@@ -191,8 +193,7 @@ class DTWhoisHistory(OneShotAnalytics, DomainToolsApi):
                 )
 
                 parsed = parse_raw_whois([record["whois"]["record"]], normalized=True)
-                email = get_value_at(parsed, "contacts.registrant.email")
-                if email:
+                if email := get_value_at(parsed, "contacts.registrant.email"):
                     email = Email.get_or_create(value=email)
                     links.update(
                         observable.link_to(
@@ -289,8 +290,9 @@ class DTWhois(OneShotAnalytics, DomainToolsApi):
                 context = {"source": "whois"}
 
             data = DomainToolsApi.get(
-                "/{}/whois/parsed".format(observable.value), results.settings
+                f"/{observable.value}/whois/parsed", results.settings
             )
+
             results.update(raw=json.dumps(data, indent=2))
             context["raw"] = data["response"]["whois"]
 

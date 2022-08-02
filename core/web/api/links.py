@@ -31,10 +31,7 @@ class Link(CrudApi):
         """
         obj = self.objectmanager.objects.get(id=id)
         for i, inv in enumerate(Investigation.objects(links__id=id)):
-            inv.modify(
-                {"links__id": id},
-                set__links__S__id="local-{}-{}".format(time.time(), i),
-            )
+            inv.modify({"links__id": id}, set__links__S__id=f"local-{time.time()}-{i}")
         obj.delete()
         return render({"deleted": id})
 
@@ -44,10 +41,7 @@ class Link(CrudApi):
         data = loads(request.data)
         ids = iterify(data["ids"])
         for i, inv in enumerate(Investigation.objects(links__id__in=ids)):
-            inv.modify(
-                {"links__id": id},
-                set__links__S__id="local-{}-{}".format(time.time(), i),
-            )
+            inv.modify({"links__id": id}, set__links__S__id=f"local-{time.time()}-{i}")
         self.objectmanager.objects(id__in=ids).delete()
         return render({"deleted": ids})
 
@@ -88,7 +82,7 @@ class Link(CrudApi):
         mandatory_params = ["type_src", "type_dst", "link_src", "link_dst"]
         params = request.json
 
-        if not all(key in params for key in mandatory_params):
+        if any(key not in params for key in mandatory_params):
             abort(400)
 
         type_src = params["type_src"]

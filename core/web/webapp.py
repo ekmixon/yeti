@@ -26,7 +26,7 @@ login_manager = LoginManager()
 login_manager.init_app(webapp)
 login_manager.login_view = "/login"
 
-auth_module = import_module("core.auth.%s" % yeti_config.auth.module)
+auth_module = import_module(f"core.auth.{yeti_config.auth.module}")
 webapp.register_blueprint(auth_module.auth)
 is_true = False
 print(yeti_config.mongodb)
@@ -75,7 +75,7 @@ def frontend_login_required():
 
 @api.before_request
 def api_login_required():
-    if not current_user.is_active and not request.method == "OPTIONS":
+    if not current_user.is_active and request.method != "OPTIONS":
         return dumps({"error": "X-Api-Key header missing or invalid"}), 401
 
 
@@ -90,10 +90,7 @@ def list_routes():
     output = []
     for rule in webapp.url_map.iter_rules():
 
-        options = {}
-        for arg in rule.arguments:
-            options[arg] = "[{0}]".format(arg)
-
+        options = {arg: "[{0}]".format(arg) for arg in rule.arguments}
         methods = ",".join(rule.methods)
         url = url_for(rule.endpoint, **options)
 

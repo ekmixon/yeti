@@ -74,7 +74,7 @@ def find_method(instance, method_name, argument_name):
 
 
 def get_queryset(collection, filters, regex, ignorecase, replace=True):
-    result_filters = dict()
+    result_filters = {}
 
     queryset = collection.objects
     if "order_by" in filters:
@@ -82,9 +82,8 @@ def get_queryset(collection, filters, regex, ignorecase, replace=True):
 
     for key, value in filters.items():
         key = key.replace(".", "__")
-        if replace:
-            if key in SEARCH_REPLACE:
-                key = SEARCH_REPLACE[key]
+        if replace and key in SEARCH_REPLACE:
+            key = SEARCH_REPLACE[key]
 
         if regex and isinstance(value, str):
             flags = 0
@@ -105,7 +104,7 @@ def get_queryset(collection, filters, regex, ignorecase, replace=True):
             )
             result_filters.pop(alias)
 
-    print("Filter: {}".format(result_filters), q.to_query(collection))
+    print(f"Filter: {result_filters}", q.to_query(collection))
 
     return queryset.filter(**result_filters).filter(q)
 
@@ -137,12 +136,11 @@ def prevent_csrf(func):
 
 
 def get_user_groups():
-    if current_user.has_role("admin"):
-        groups = Group.objects()
-    else:
-        groups = Group.objects(members__in=[current_user.id])
-
-    return groups
+    return (
+        Group.objects()
+        if current_user.has_role("admin")
+        else Group.objects(members__in=[current_user.id])
+    )
 
 
 def group_user_permission(investigation=False):
@@ -160,8 +158,9 @@ def group_user_permission(investigation=False):
 
         groups = get_user_groups()
         return (
-            any([group.id in investigation.sharing for group in groups])
+            any(group.id in investigation.sharing for group in groups)
             or current_user.id in investigation.sharing
         )
+
 
     return False

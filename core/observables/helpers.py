@@ -35,7 +35,9 @@ def register_observables(mapper, observables, blacklist_domains, context, source
 
     for key in observables:
         for ioc in filter(None, observables[key]):
-            if key == "Url" and any([domain in ioc for domain in blacklist_domains]):
+            if key == "Url" and any(
+                domain in ioc for domain in blacklist_domains
+            ):
                 continue
             try:
                 ioc_data = mapper[key].get_or_create(value=ioc)

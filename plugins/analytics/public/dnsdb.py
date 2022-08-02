@@ -30,11 +30,12 @@ class DNSDBApi(object):
                 new.link_to(
                     observable,
                     source="DNSDB Passive DNS",
-                    description="{} record".format(record["rrtype"]),
+                    description=f'{record["rrtype"]} record',
                     first_seen=record["first_seen"],
                     last_seen=record["last_seen"],
                 )
             )
+
 
         return list(links)
 
@@ -51,11 +52,12 @@ class DNSDBApi(object):
                     hostname.link_to(
                         observable,
                         source="DNSDB Passive DNS",
-                        description="{} record".format(record["rrtype"]),
+                        description=f'{record["rrtype"]} record',
                         first_seen=record["first_seen"],
                         last_seen=record["last_seen"],
                     )
                 )
+
 
         return list(links)
 
@@ -63,12 +65,8 @@ class DNSDBApi(object):
     def lookup(type, observable, api_key):
         headers = {"accept": "application/json", "X-Api-Key": api_key}
 
-        if isinstance(observable, Hostname):
-            obs_type = "name"
-        else:
-            obs_type = "ip"
-
-        url = "{}/{}/{}/{}".format(DNSDBApi.API_URL, type, obs_type, observable.value)
+        obs_type = "name" if isinstance(observable, Hostname) else "ip"
+        url = f"{DNSDBApi.API_URL}/{type}/{obs_type}/{observable.value}"
 
         r = requests.get(url, headers=headers, proxies=yeti_config.proxy)
 

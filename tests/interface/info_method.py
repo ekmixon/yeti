@@ -4,6 +4,7 @@
 Hits the HTTP interface in ways which call the various .info() methods.
 """
 
+
 import sys
 from os import path
 
@@ -23,11 +24,12 @@ SAMPLE_DOMAIN = "example.com"
 SAMPLE_SOURCE = "Yeti_Test"
 
 SAMPLE_OBSERVABLE = {
-    "value": "http://{}/yeti-test".format(SAMPLE_DOMAIN),
+    "value": f"http://{SAMPLE_DOMAIN}/yeti-test",
     "tags": [SAMPLE_SOURCE],
     "source": SAMPLE_SOURCE,
     "context": {},
 }
+
 SAMPLE_ACTOR = {
     "type": "Actor",
     "name": "Joe's Garage",
@@ -60,10 +62,11 @@ class ObservableInfo(unittest.TestCase):
 
     def test_info(self):
         resp = requests.post(
-            "http://{}:{}/api/observable/".format(YETI_SERVICE.host, YETI_SERVICE.port),
+            f"http://{YETI_SERVICE.host}:{YETI_SERVICE.port}/api/observable/",
             json=SAMPLE_OBSERVABLE,
             headers={"Accept": "application/json"},
         )
+
         self.assertEqual(resp.status_code, 200, "Expected 200 status")
 
         self.assertTrue("id" in resp.json(), "Expected 'id' in response")
@@ -75,8 +78,9 @@ class ObservableInfo(unittest.TestCase):
         self.assertEqual(
             resp.json()["value"],
             SAMPLE_OBSERVABLE["value"],
-            "Expected to see {} as value".format(SAMPLE_OBSERVABLE["value"]),
+            f'Expected to see {SAMPLE_OBSERVABLE["value"]} as value',
         )
+
 
         self.assertTrue(self.id in self.url, "url should contain id")
         self.ok_to_delete = True
@@ -113,8 +117,9 @@ class EntityInfo(unittest.TestCase):
         self.assertEqual(
             resp.json()["name"],
             SAMPLE_ACTOR["name"],
-            "Expected to see {} as name".format(SAMPLE_ACTOR["name"]),
+            f'Expected to see {SAMPLE_ACTOR["name"]} as name',
         )
+
 
         self.assertTrue(EntityInfo.BASE_URL in self.url, "url should contain BASE_URL")
         self.ok_to_delete = True
@@ -153,8 +158,9 @@ class IndicatorInfo(unittest.TestCase):
         self.assertEqual(
             resp.json()["name"],
             SAMPLE_INDICATOR["name"],
-            "Expected to see {} as name".format(SAMPLE_INDICATOR["name"]),
+            f'Expected to see {SAMPLE_INDICATOR["name"]} as name',
         )
+
 
         self.assertTrue(
             IndicatorInfo.BASE_URL in self.url, "url should contain BASE_URL"

@@ -24,8 +24,8 @@ class ProcessUrl(InlineAnalytics):
     def extract_hostname(url_string):
         host = re.search("://(?P<host>[^/:]+)[/:]?", url_string)
         if host:
-            host = host.group("host")
-            logging.debug("Extracted {} from {}".format(host, url_string))
+            host = host["host"]
+            logging.debug(f"Extracted {host} from {url_string}")
         return host
 
     @staticmethod
@@ -37,6 +37,4 @@ class ProcessUrl(InlineAnalytics):
             url.active_link_to(h, "hostname", "ProcessUrl", clean_old=False)
             return h
         except ObservableValidationError:
-            logging.error(
-                "An error occurred when trying to add {} to the database".format(host)
-            )
+            logging.error(f"An error occurred when trying to add {host} to the database")

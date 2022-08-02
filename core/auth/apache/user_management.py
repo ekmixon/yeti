@@ -31,6 +31,4 @@ def authenticate():
 
 def get_default_user():
     user = authenticate()
-    if not user:
-        return AnonymousUserMixin()
-    return user
+    return user or AnonymousUserMixin()

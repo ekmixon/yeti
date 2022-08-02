@@ -18,7 +18,4 @@ class Path(Observable):
 
     @staticmethod
     def check_type(txt):
-        if Path.regex.match(txt):
-            return True
-        else:
-            return False
+        return bool(Path.regex.match(txt))

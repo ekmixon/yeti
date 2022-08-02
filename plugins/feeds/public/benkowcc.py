@@ -24,12 +24,8 @@ class BenkowTracker(Feed):
         url = line["url"]
         ip = line["ip"]
         family = line["type"]
-        context = {}
-        context["date_added"] = line["date"]
-        context["source"] = self.name
-        tags = []
-        tags.append(family.lower())
-
+        context = {"date_added": line["date"], "source": self.name}
+        tags = [family.lower()]
         try:
             if url:
                 url_obs = Url.get_or_create(value=url)

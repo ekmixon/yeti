@@ -27,20 +27,16 @@ class VirusTotalHunting(Feed):
         if not api_key:
             raise Exception("Your VT API key is not set in the yeti.conf file")
 
-        self.source = (
-            "https://www.virustotal.com/intelligence/hunting/notifications-feed/?key=%s"
-            % api_key
-        )
+        self.source = f"https://www.virustotal.com/intelligence/hunting/notifications-feed/?key={api_key}"
+
         for index, item in self.update_json(key="notifications"):
             self.analyze(item)
 
     def analyze(self, item):
-        tags = []
-
         json_string = item.to_json()
         context = {"source": self.name}
 
-        f_vt = File.get_or_create(value="FILE:{}".format(item["sha256"]))
+        f_vt = File.get_or_create(value=f'FILE:{item["sha256"]}')
 
         sha256 = Hash.get_or_create(value=item["sha256"])
 
@@ -52,12 +48,10 @@ class VirusTotalHunting(Feed):
         f_vt.active_link_to(sha1, "sha1", self.name)
         f_vt.active_link_to(sha256, "sha256", self.name)
 
-        tags.append(item["ruleset_name"])
-        tags.append(item["type"])
-
+        tags = [item["ruleset_name"], item["type"]]
         context["raw"] = json_string
         context["size"] = item["size"]
-        context["score vt"] = "%s/%s" % (item["positives"], item["total"])
+        context["score vt"] = f'{item["positives"]}/{item["total"]}'
 
         f_vt.tag(tags)
         f_vt.add_context(context)

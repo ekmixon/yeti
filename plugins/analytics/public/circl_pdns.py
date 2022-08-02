@@ -59,10 +59,7 @@ class CirclPDNSApiQuery(OneShotAnalytics, CirclPDNSApi):
         )
 
         results.update(raw=json_string)
-        result = {}
-        result["source"] = "circl_pdns_query"
-        result["raw"] = json_string
-
+        result = {"source": "circl_pdns_query", "raw": json_string}
         if isinstance(observable, Ip):
             for record in json_result:
                 new = Observable.add_text(record["rrname"])
@@ -71,11 +68,12 @@ class CirclPDNSApiQuery(OneShotAnalytics, CirclPDNSApi):
                     observable.link_to(
                         new,
                         source="Circl.lu Passive DNS",
-                        description="{} record".format(record["rrtype"]),
+                        description=f'{record["rrtype"]} record',
                         first_seen=datetime.fromtimestamp(record["time_first"]),
                         last_seen=datetime.fromtimestamp(record["time_last"]),
                     )
                 )
+
 
         elif isinstance(observable, Hostname):
             for record in json_result:
@@ -85,11 +83,12 @@ class CirclPDNSApiQuery(OneShotAnalytics, CirclPDNSApi):
                     observable.link_to(
                         new,
                         source="Circl.lu Passive DNS",
-                        description="{} record".format(record["rrtype"]),
+                        description=f'{record["rrtype"]} record',
                         first_seen=datetime.fromtimestamp(record["time_first"]),
                         last_seen=datetime.fromtimestamp(record["time_last"]),
                     )
                 )
+
 
         observable.add_context(result)
         return list(links)

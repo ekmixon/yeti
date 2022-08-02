@@ -53,7 +53,7 @@ class UrlHausPayloads(Feed):
 
         if sha256_hash:
             try:
-                malware_file = File.get_or_create(value="FILE:{}".format(sha256_hash))
+                malware_file = File.get_or_create(value=f"FILE:{sha256_hash}")
 
                 malware_file.add_context(context)
                 malware_file.tag(filetype)

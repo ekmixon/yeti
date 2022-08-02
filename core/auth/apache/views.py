@@ -11,10 +11,9 @@ auth = Blueprint("auth", __name__, template_folder="templates")
 def login():
     if current_user.is_authenticated:
         return redirect("/observable/")
-    user = authenticate()
-    if user:
+    if user := authenticate():
         login_user(user)
-        print "User logged in (web):", user
+        login_user(user)
         return redirect(request.args.get("next", "/"))
     flash("Invalid credentials", "danger")
     abort(401)
